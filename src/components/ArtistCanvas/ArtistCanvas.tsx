@@ -14,7 +14,6 @@ export interface IObjectSnapshot {
 }
 
 export interface ArtistCanvasProps {
-	gameTime: number;
 	refreshInterval: number;
 	onNewEvents: (e: IGameEvent) => void;
 }
@@ -221,6 +220,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		}
 
 		this.c.on('object:added', this.addNewImageToStored);
+		this.c.on('object:removed', this.addRemoveImageToStored)
 
 		fabric.Object.prototype.on('mouseup', this.onMouseUp);
 
@@ -267,23 +267,27 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		);
 	};
 
-	// -- Canvas - Getters -- //
-
-	private getObjects = () => {
-		if (this.c) {
-		}
-	};
-
 	// ---- Setters ---- //
 
-	private setMouseOver = (mouseIsOverTrashCan: boolean) => {
+	private setMouseOver = (mouseIsOverTrashCan: boolean): void => {
 		this.setState({
 			mouseIsOverTrashCan
 		});
 	};
 
-	private addNewImageToStored = (e: fabric.IEvent) => {
-		if (!e.target) {
+	private addRemoveImageToStored = (e: fabric.IEvent): void => {
+		if (!e || !e.target || !e.target.name) {
+			return;
+		}
+
+		this.storedCanvasEvents.push({
+			type: CanvasEventTypes.remove,
+			data: e.target.name
+		});
+	}
+
+	private addNewImageToStored = (e: fabric.IEvent): void => {
+		if (!e || !e.target || !e.target.name) {
 			return;
 		}
 
@@ -292,7 +296,8 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		this.storedCanvasEvents.push({
 			type: CanvasEventTypes.add,
 			data: {
-				src: image.getSrc()
+				src: image.getSrc(),
+				name: image.name
 			}
 		});
 	};

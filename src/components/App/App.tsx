@@ -3,6 +3,7 @@ import s from './App.module.scss';
 import { ArtistCanvas } from '../ArtistCanvas/ArtistCanvas';
 import { IGameEvent } from '../../models/IGameEvent';
 import { IGameEvents } from '../../models/IGameEvents';
+import { GuesserCanvas } from '../GuesserCanvas/GuesserCanvas';
 
 const refreshInterval: number = 200; // Refresh rate in Miliseconds
 
@@ -12,7 +13,7 @@ export interface AppProps {
  
 export interface AppState {
 	gameTime: number;
-	gameEvents: IGameEvents;
+	gameEvents: IGameEvent[];
 }
  
 export class App extends React.Component<AppProps, AppState> {
@@ -23,20 +24,22 @@ export class App extends React.Component<AppProps, AppState> {
 			 * GameTime in miliseconds
 			 */
 			gameTime: 0,
-			gameEvents: {}
+			gameEvents: []
 		};
 	}
 
 	public render() {
 
 		const {
-			gameTime
+			gameTime,
+			gameEvents
 		} = this.state;
 
 		return (
 			<div>
 				{gameTime}
-				<ArtistCanvas onNewEvents={this.onNewEvent} gameTime={gameTime} refreshInterval={refreshInterval} />
+				<ArtistCanvas onNewEvents={this.onNewEvent} refreshInterval={refreshInterval} />
+				<GuesserCanvas refreshInterval={refreshInterval} gameEvents={gameEvents} />
 			</div>
 		);
 	}
@@ -51,10 +54,7 @@ export class App extends React.Component<AppProps, AppState> {
 			gameTime
 		} = this.state;
 		// Get a copy of the game events
-		const allEvents: IGameEvents = {...gameEvents};
-
-		// Add a new event at the timestamp
-		allEvents[gameTime] = e;
+		const allEvents: IGameEvent[] = [...gameEvents, e];
 
 		console.log({allEvents});
 

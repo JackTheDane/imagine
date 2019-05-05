@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { InteractiveImage } from '../InteractiveImage/InteractiveImage'
+import { InteractiveImage } from './InteractiveImage/InteractiveImage'
 
 
 export function ArtistCanvas() {
