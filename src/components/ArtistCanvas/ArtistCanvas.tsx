@@ -367,16 +367,16 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		}
 
 		if (scaleX != null) {
-			r.scale += scaleX - 1;
+			r.scale = r.scale * scaleX;
 		} else if (scaleY != null) {
-			r.scale += scaleY - 1;
+			r.scale = r.scale * scaleY;
 		}
 
 		return {
 			top: Math.round(r.top),
 			angle: Math.round(r.angle),
 			left: Math.round(r.left),
-			scale: +r.angle.toFixed(2) // Round down to two decimals. "+" ensures that a number is returned
+			scale: +r.scale.toFixed(2) // Round down to two decimals. "+" ensures that a number is returned
 		};
 	};
 
@@ -416,8 +416,15 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 			// Check for changes in angle
 			if (newObject.angle !== oldObject.angle) {
+				// const newAngle: number = (newObject.angle > 180 && oldObject.angle < 90) ? newObject.angle - 360 : newObject.angle;
+
+				// console.log(newObject.angle);
+				// console.log(oldObject.angle);
+
+				// console.log({newAngle});
+
 				changesArray.push({
-					type: ObjectEventTypes.rotate,
+					type: ObjectEventTypes.angle,
 					data: newObject.angle
 				});
 			}

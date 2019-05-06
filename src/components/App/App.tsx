@@ -5,7 +5,7 @@ import { IGameEvent } from '../../models/IGameEvent';
 import { IGameEvents } from '../../models/IGameEvents';
 import { GuesserCanvas } from '../GuesserCanvas/GuesserCanvas';
 
-const refreshInterval: number = 200; // Refresh rate in Miliseconds
+const refreshInterval: number = 100; // Refresh rate in Miliseconds
 
 export interface AppProps {
 	
@@ -38,8 +38,10 @@ export class App extends React.Component<AppProps, AppState> {
 		return (
 			<div>
 				{gameTime}
-				<ArtistCanvas onNewEvents={this.onNewEvent} refreshInterval={refreshInterval} />
-				<GuesserCanvas refreshInterval={refreshInterval} gameEvents={gameEvents} />
+				<div style={{ display: 'flex' }}>
+					<ArtistCanvas onNewEvents={this.onNewEvent} refreshInterval={refreshInterval} />
+					<GuesserCanvas refreshInterval={refreshInterval} gameEvents={gameEvents} />
+				</div>
 			</div>
 		);
 	}

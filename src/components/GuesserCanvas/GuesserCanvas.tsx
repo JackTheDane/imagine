@@ -8,6 +8,7 @@ import { IObjectEvent } from '../../models/IObjectEvent';
 import { ObjectEventTypes } from '../../models/ObjectEventTypes';
 import { IGameEvent } from '../../models/IGameEvent';
 import { IObjectChanges } from '../../models/IObjectChanges';
+import { IImageInfo } from '../../models/IImageInfo';
 
 export interface GuesserCanvasProps {
 	refreshInterval: number;
@@ -62,8 +63,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 	public componentDidUpdate(prevProps: GuesserCanvasProps, prevState: GuesserCanvasState): void {
 
 		const {
-			gameEvents,
-			refreshInterval
+			gameEvents
 		} = this.props;
 
 		if (
@@ -72,6 +72,18 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 			&& prevProps.gameEvents.length < gameEvents.length
 		) {
 			const newUpdate: IGameEvent = gameEvents[gameEvents.length - 1];
+
+			if (!newUpdate) {
+				return;
+			}
+
+			if (newUpdate.cEvents) {
+				this.translateAndExecuteCanvasEvents(newUpdate.cEvents);
+			}
+
+			if (newUpdate.oEvents) {
+				this.translateAndExecuteObjectEvents(newUpdate.oEvents);
+			}
 
 			console.log(newUpdate);
 		}
@@ -91,4 +103,132 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		this.c = new fabric.StaticCanvas(this.canvasRef.current);
 	};
 
+	// -- Implementing canvas changes -- //
+
+	private translateAndExecuteCanvasEvents = (events: ICanvasEvent[]): void => {
+		// Loop over all the events, checking for recognized types
+		events.forEach(
+			(e: ICanvasEvent): void => {
+				switch (e.type) {
+					case CanvasEventTypes.add:
+						if (e.data) {
+							this.addImage(e.data as IImageInfo);
+						}
+						break;
+
+					case CanvasEventTypes.remove:
+						if (e.data) {
+							this.removeImage(e.data as string);
+						}
+						break;
+				}
+			}
+		)
+	}
+
+	private translateAndExecuteObjectEvents = (events: IObjectChanges): void => {
+		if (!this.c || !events) {
+			return;
+		}
+
+		const objects: fabric.Object[] = this.c.getObjects('image');
+
+		if (!objects) {
+			return;
+		}
+
+		objects.forEach( (o: fabric.Object): void => {
+			if (!o.name || !this.c) {
+				return;
+			}
+
+			const objectChanges: IObjectEvent[] | undefined = events[o.name];
+
+			// console.log({objectChanges});
+
+			if (!objectChanges || objectChanges.length === 0) {
+				return;
+			}
+
+			const animationProperties: {
+				top?: number;
+				left?: number;
+				angle?: number;
+				scaleX?: number;
+				scaleY?: number;
+			} = {};
+
+			objectChanges.forEach( (change: IObjectEvent): void => {
+				if (!change || change.data == null || change.type == null) {
+					return;
+				}
+				
+				switch (change.type) {
+					case ObjectEventTypes.top:
+						animationProperties.top = change.data as number;
+						break;
+
+					case ObjectEventTypes.left:
+						animationProperties.left = change.data as number;
+						break;
+
+					case ObjectEventTypes.angle:
+						animationProperties.angle = change.data as number;
+						break;
+
+					case ObjectEventTypes.scale:
+						animationProperties.scaleX = change.data as number;
+						animationProperties.scaleY = change.data as number;
+						break;
+				}
+			});
+
+			(o as any).animate(
+				animationProperties,
+				{
+					duration: this.props.refreshInterval,
+					easing: (t: number, b: number, c: number, d: number): number => c * t / d + b,
+					onChange: () => {
+						if (this.c) {
+							this.c.renderAll();
+						}
+					}
+				}
+			);
+
+		});
+	}
+
+	// ---- Image methods ---- //
+
+	private addImage = ({ name, src }: IImageInfo) => {
+		if (!this.c || !name || !src) {
+			return;
+		}
+
+		fabric.Image.fromURL(
+			src,
+			(img) => {
+				if (this.c) {
+					this.c.add(img);
+				}
+			},
+			{
+				name
+			}
+		);
+	}
+
+	private removeImage = (name: string) => {
+		if (!this.c || !name) {
+			return;
+		}
+
+		const objects: fabric.Object[] = this.c.getObjects('image');
+		const imageToRemove: fabric.Object | undefined = objects.find( o => o.name != null && o.name === name);
+
+		if (imageToRemove) {
+			this.c.remove(imageToRemove);
+		}
+	}
 }
