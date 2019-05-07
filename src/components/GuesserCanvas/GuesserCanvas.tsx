@@ -1,7 +1,6 @@
 import React, { createRef } from 'react';
 import s from './GuesserCanvas.module.scss';
 import { fabric } from 'fabric';
-import { ISavedFabricObject } from '../../models/ISavedFabricObject';
 import { ICanvasEvent } from '../../models/ICanvasEvent';
 import { CanvasEventTypes } from '../../models/CanvasEventTypes';
 import { IObjectEvent } from '../../models/IObjectEvent';
@@ -15,7 +14,7 @@ export interface GuesserCanvasProps {
 	gameEvents: IGameEvent[];
 }
 
-export interface GuesserCanvasState {}
+export interface GuesserCanvasState { }
 
 export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCanvasState> {
 	private canvasRef = createRef<HTMLCanvasElement>();
@@ -67,11 +66,17 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		} = this.props;
 
 		if (
-			prevProps.gameEvents 
-			&& gameEvents 
+			prevProps.gameEvents
+			&& gameEvents
 			&& prevProps.gameEvents.length < gameEvents.length
 		) {
 			const newUpdate: IGameEvent = gameEvents[gameEvents.length - 1];
+
+			let oldUpdate: IGameEvent | undefined;
+
+			if (gameEvents.length > 1) {
+				oldUpdate = gameEvents[gameEvents.length - 2];
+			}
 
 			if (!newUpdate) {
 				return;
@@ -82,10 +87,14 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 			}
 
 			if (newUpdate.oEvents) {
-				this.translateAndExecuteObjectEvents(newUpdate.oEvents);
+				if (oldUpdate && oldUpdate.oEvents) {
+					this.translateAndExecuteObjectEvents(newUpdate.oEvents, oldUpdate.oEvents);
+				} else {
+					this.translateAndExecuteObjectEvents(newUpdate.oEvents);
+				}
 			}
 
-			console.log(newUpdate);
+			// console.log(newUpdate);
 		}
 	}
 
@@ -126,7 +135,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		)
 	}
 
-	private translateAndExecuteObjectEvents = (events: IObjectChanges): void => {
+	private translateAndExecuteObjectEvents = (events: IObjectChanges, oldEvents?: IObjectChanges): void => {
 		if (!this.c || !events) {
 			return;
 		}
@@ -137,7 +146,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 			return;
 		}
 
-		objects.forEach( (o: fabric.Object): void => {
+		objects.forEach((o: fabric.Object): void => {
 			if (!o.name || !this.c) {
 				return;
 			}
@@ -158,11 +167,11 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 				scaleY?: number;
 			} = {};
 
-			objectChanges.forEach( (change: IObjectEvent): void => {
+			objectChanges.forEach((change: IObjectEvent): void => {
 				if (!change || change.data == null || change.type == null) {
 					return;
 				}
-				
+
 				switch (change.type) {
 					case ObjectEventTypes.top:
 						animationProperties.top = change.data as number;
@@ -173,7 +182,41 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 						break;
 
 					case ObjectEventTypes.angle:
-						animationProperties.angle = change.data as number;
+
+						const angles: { old: number; new: number; } = change.data;
+
+						if (!this.c || o.angle == null || !angles || angles.old == null || angles.new == null) {
+							return;
+						}
+
+
+						const angleDifference: number = (angles.new - o.angle);
+
+						if (angleDifference > 180) {
+							o.set('angle', o.angle + 360);
+						} else if (angleDifference < -180) {
+							o.set('angle', o.angle - 360);
+						}
+
+						// const numberOfRotations: number = Math.floor(Math.abs(o.angle) / 360);
+
+						// let valueToAdd: number = angleDifference > 180
+						// 	? angles.new - 360
+						// 	: angleDifference < -180
+						// 		? angles.new + 360
+						// 		: angles.new;
+
+						// if (o.angle < 0) {
+						// 	valueToAdd -= 360 * numberOfRotations;
+						// } else {
+						// 	valueToAdd += 360 * numberOfRotations;
+						// }
+
+
+						console.log(o.angle);
+						// console.log({ numberOfRotations, angleDifference, valueToAdd });
+
+						animationProperties.angle = angles.new;
 						break;
 
 					case ObjectEventTypes.scale:
@@ -225,7 +268,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		}
 
 		const objects: fabric.Object[] = this.c.getObjects('image');
-		const imageToRemove: fabric.Object | undefined = objects.find( o => o.name != null && o.name === name);
+		const imageToRemove: fabric.Object | undefined = objects.find(o => o.name != null && o.name === name);
 
 		if (imageToRemove) {
 			this.c.remove(imageToRemove);

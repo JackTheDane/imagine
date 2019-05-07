@@ -1,21 +1,20 @@
 import React from 'react';
-import s from './App.module.scss';
+// import s from './App.module.scss';
 import { ArtistCanvas } from '../ArtistCanvas/ArtistCanvas';
 import { IGameEvent } from '../../models/IGameEvent';
-import { IGameEvents } from '../../models/IGameEvents';
 import { GuesserCanvas } from '../GuesserCanvas/GuesserCanvas';
 
 const refreshInterval: number = 100; // Refresh rate in Miliseconds
 
 export interface AppProps {
-	
+
 }
- 
+
 export interface AppState {
 	gameTime: number;
 	gameEvents: IGameEvent[];
 }
- 
+
 export class App extends React.Component<AppProps, AppState> {
 	constructor(props: AppProps) {
 		super(props);
@@ -52,13 +51,12 @@ export class App extends React.Component<AppProps, AppState> {
 
 	private onNewEvent = (e: IGameEvent) => {
 		const {
-			gameEvents,
-			gameTime
+			gameEvents
 		} = this.state;
 		// Get a copy of the game events
 		const allEvents: IGameEvent[] = [...gameEvents, e];
 
-		console.log({allEvents});
+		// console.log({allEvents});
 
 		// Set events to state
 		this.setState({
@@ -79,11 +77,11 @@ export class App extends React.Component<AppProps, AppState> {
 // export const App = () => {
 
 // 	let [gameTime, setGameTime] = React.useState<number>(0);
-	
+
 // 	const incrementGameTime = () => {
 // 		setGameTime(gameTime + refreshInterval);
 // 	}
-	
+
 // 	useEffect(() => {
 // 		setInterval(incrementGameTime, refreshInterval);
 // 	}, []);

@@ -8,6 +8,7 @@ import { IObjectEvent } from '../../models/IObjectEvent';
 import { ObjectEventTypes } from '../../models/ObjectEventTypes';
 import { IGameEvent } from '../../models/IGameEvent';
 import { IObjectChanges } from '../../models/IObjectChanges';
+import { getThirdPointInTriangle } from '../../utilities/getThirdPointInTriangle';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
@@ -67,40 +68,6 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 					Add Homer
 				</button>
 
-				<button
-					onClick={() => {
-						if (!this.c) {
-							console.log('No c');
-							return;
-						}
-						console.log('Attempting animation');
-
-						const objects: any[] = this.c.getObjects();
-						console.log({ objects });
-
-						this.c.discardActiveObject();
-
-						objects.forEach((o: any) => {
-							o.animate(
-								{ left: 100, top: 100, scaleX: 0.2, scaleY: 0.2, angle: 30 },
-								{
-									duration: 5000,
-									easing: function(t: number, b: number, c: number, d: number) {
-										return c * t / d + b;
-									},
-									onChange: () => {
-										if (this.c) {
-											this.c.renderAll();
-										}
-									}
-								}
-							);
-						});
-					}}
-				>
-					Test
-				</button>
-
 				<div
 					style={{
 						display: 'flex',
@@ -134,7 +101,6 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 	public componentDidMount(): void {
 		this.init();
-		// setInterval(this.setGuesserCanvas, 50);
 	}
 
 	public componentWillUnmount(): void {
@@ -165,8 +131,9 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		fabric.Object.prototype.borderOpacityWhenMoving = 0;
 		fabric.Object.prototype.originX = 'center';
 		fabric.Object.prototype.originY = 'center';
+		fabric.Object.prototype.lockScalingFlip = true;
 
-		fabric.Image.prototype.hasControls = !fabric.isTouchSupported;
+		fabric.Object.prototype.hasControls = !fabric.isTouchSupported;
 
 		fabric.Object.prototype.setControlsVisibility({
 			mt: false, // middle-top
@@ -317,7 +284,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 	/**
 	 * Returns an ISavedFabricObject from a fabric.Object.
 	 * This includes the coordinates of any group that the object might be part of.
-	 * 
+	 *
 	 * @param fabric.Object
 	 */
 	private getSavedFabricObjectFromObject = (object: fabric.Object): ISavedFabricObject | undefined => {
@@ -334,26 +301,6 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 			angle: 0
 		};
 
-		if (group) {
-			if (group.top != null) {
-				r.top += group.top;
-			}
-
-			if (group.left != null) {
-				r.left += group.left;
-			}
-
-			if (group.angle != null) {
-				r.angle += group.angle;
-			}
-
-			if (group.scaleX != null) {
-				r.scale = group.scaleX;
-			} else if (group.scaleY != null) {
-				r.scale = group.scaleY;
-			}
-		}
-
 		if (top != null) {
 			r.top += top;
 		}
@@ -367,10 +314,47 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		}
 
 		if (scaleX != null) {
-			r.scale = r.scale * scaleX;
+			r.scale = scaleX;
 		} else if (scaleY != null) {
-			r.scale = r.scale * scaleY;
+			r.scale = scaleY;
 		}
+
+		if (group) {
+
+			if (group.angle) {
+				r.angle += group.angle;
+
+				if (object.top != null && object.left != null) {
+					const [x, y]: [number, number] = getThirdPointInTriangle(0, 0, object.left, object.top, group.angle);
+
+					r.left = x;
+					r.top = y;
+				}
+			}
+
+			if (group.scaleX != null && group.scaleX !== 1) {
+				r.scale = r.scale * group.scaleX;
+				r.top = r.top * group.scaleX;
+				r.left = r.left * group.scaleX;
+
+			} else if (group.scaleY != null && group.scaleY !== 1) {
+				r.scale = r.scale * group.scaleY;
+				r.top = r.top * group.scaleY;
+
+				r.left = r.left * group.scaleY;
+			}
+
+			if (group.top != null) {
+				r.top += group.top;
+			}
+
+			if (group.left != null) {
+				r.left += group.left;
+			}
+		}
+
+		console.log({ group, top });
+		console.log(r.top);
 
 		return {
 			top: Math.round(r.top),
@@ -416,16 +400,13 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 			// Check for changes in angle
 			if (newObject.angle !== oldObject.angle) {
-				// const newAngle: number = (newObject.angle > 180 && oldObject.angle < 90) ? newObject.angle - 360 : newObject.angle;
-
-				// console.log(newObject.angle);
-				// console.log(oldObject.angle);
-
-				// console.log({newAngle});
 
 				changesArray.push({
 					type: ObjectEventTypes.angle,
-					data: newObject.angle
+					data: {
+						old: oldObject.angle,
+						new: newObject.angle
+					}
 				});
 			}
 
