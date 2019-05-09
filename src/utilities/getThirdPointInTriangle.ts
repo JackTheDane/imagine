@@ -19,8 +19,6 @@ export function getThirdPointInTriangle(x0: number, y0: number, x1: number, y1: 
       ]);
     }
 
-    debugger;
-
     const l = Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2));
 
     if (l === 0) {

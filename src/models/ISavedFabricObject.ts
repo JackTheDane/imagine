@@ -3,4 +3,5 @@ export interface ISavedFabricObject {
 	left: number;
 	top: number;
 	angle: number;
+	src: string;
 }

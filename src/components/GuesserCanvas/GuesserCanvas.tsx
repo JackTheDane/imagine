@@ -12,6 +12,7 @@ import { IImageInfo } from '../../models/IImageInfo';
 export interface GuesserCanvasProps {
 	refreshInterval: number;
 	gameEvents: IGameEvent[];
+	width: number;
 }
 
 export interface GuesserCanvasState { }
@@ -21,9 +22,14 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 	private c: fabric.StaticCanvas | undefined;
 
 	public render() {
+
+		const {
+			width
+		} = this.props;
+
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
-			height: 800,
-			width: 600
+			width,
+			height: width * (0.75)
 		};
 
 		return (
@@ -72,12 +78,6 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		) {
 			const newUpdate: IGameEvent = gameEvents[gameEvents.length - 1];
 
-			let oldUpdate: IGameEvent | undefined;
-
-			if (gameEvents.length > 1) {
-				oldUpdate = gameEvents[gameEvents.length - 2];
-			}
-
 			if (!newUpdate) {
 				return;
 			}
@@ -87,11 +87,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 			}
 
 			if (newUpdate.oEvents) {
-				if (oldUpdate && oldUpdate.oEvents) {
-					this.translateAndExecuteObjectEvents(newUpdate.oEvents, oldUpdate.oEvents);
-				} else {
-					this.translateAndExecuteObjectEvents(newUpdate.oEvents);
-				}
+				this.translateAndExecuteObjectEvents(newUpdate.oEvents);
 			}
 
 			// console.log(newUpdate);
@@ -110,6 +106,8 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		}
 
 		this.c = new fabric.StaticCanvas(this.canvasRef.current);
+
+		fabric.Object.prototype.lockUniScaling = true;
 	};
 
 	// -- Implementing canvas changes -- //
@@ -130,12 +128,16 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 							this.removeImage(e.data as string);
 						}
 						break;
+
+					default:
+						console.log('Unrecognized canvas event: ', e.type);
+						break;
 				}
 			}
 		)
 	}
 
-	private translateAndExecuteObjectEvents = (events: IObjectChanges, oldEvents?: IObjectChanges): void => {
+	private translateAndExecuteObjectEvents = (events: IObjectChanges): void => {
 		if (!this.c || !events) {
 			return;
 		}
@@ -181,16 +183,19 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 						animationProperties.left = change.data as number;
 						break;
 
-					case ObjectEventTypes.angle:
+					case ObjectEventTypes.moveTo:
+						// Change.data should be the new index for the object
+						if (change.data != null) {
+							o.moveTo(change.data);
+						}
+						break;
 
-						const angles: { old: number; new: number; } = change.data;
-
-						if (!this.c || o.angle == null || !angles || angles.old == null || angles.new == null) {
+					case ObjectEventTypes.angle: {
+						if (!this.c || o.angle == null || change.data == null) {
 							return;
 						}
 
-
-						const angleDifference: number = (angles.new - o.angle);
+						const angleDifference: number = (change.data - o.angle);
 
 						if (angleDifference > 180) {
 							o.set('angle', o.angle + 360);
@@ -198,30 +203,17 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 							o.set('angle', o.angle - 360);
 						}
 
-						// const numberOfRotations: number = Math.floor(Math.abs(o.angle) / 360);
-
-						// let valueToAdd: number = angleDifference > 180
-						// 	? angles.new - 360
-						// 	: angleDifference < -180
-						// 		? angles.new + 360
-						// 		: angles.new;
-
-						// if (o.angle < 0) {
-						// 	valueToAdd -= 360 * numberOfRotations;
-						// } else {
-						// 	valueToAdd += 360 * numberOfRotations;
-						// }
-
-
-						console.log(o.angle);
-						// console.log({ numberOfRotations, angleDifference, valueToAdd });
-
-						animationProperties.angle = angles.new;
+						animationProperties.angle = change.data;
+					}
 						break;
 
 					case ObjectEventTypes.scale:
 						animationProperties.scaleX = change.data as number;
 						animationProperties.scaleY = change.data as number;
+						break;
+
+					default:
+						console.log('Object event type not recognized: ', change.type);
 						break;
 				}
 			});
@@ -230,8 +222,9 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 				animationProperties,
 				{
 					duration: this.props.refreshInterval,
+					// easing: fabric.util.ease.easeInOutCubic,
 					easing: (t: number, b: number, c: number, d: number): number => c * t / d + b,
-					onChange: () => {
+					onChange: (e: any) => {
 						if (this.c) {
 							this.c.renderAll();
 						}

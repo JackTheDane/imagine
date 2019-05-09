@@ -34,12 +34,17 @@ export class App extends React.Component<AppProps, AppState> {
 			gameEvents
 		} = this.state;
 
+		const commonProps = {
+			width: 500,
+			refreshInterval
+		}
+
 		return (
 			<div>
 				{gameTime}
 				<div style={{ display: 'flex' }}>
-					<ArtistCanvas onNewEvents={this.onNewEvent} refreshInterval={refreshInterval} />
-					<GuesserCanvas refreshInterval={refreshInterval} gameEvents={gameEvents} />
+					<ArtistCanvas {...commonProps} onNewEvents={this.onNewEvent} />
+					<GuesserCanvas {...commonProps} gameEvents={gameEvents} />
 				</div>
 			</div>
 		);
@@ -74,22 +79,3 @@ export class App extends React.Component<AppProps, AppState> {
 	}
 }
 
-// export const App = () => {
-
-// 	let [gameTime, setGameTime] = React.useState<number>(0);
-
-// 	const incrementGameTime = () => {
-// 		setGameTime(gameTime + refreshInterval);
-// 	}
-
-// 	useEffect(() => {
-// 		setInterval(incrementGameTime, refreshInterval);
-// 	}, []);
-
-// 	return (
-		// <div>
-		// 	{gameTime}
-		// 	<ArtistCanvas gameTime={gameTime} refreshInterval={refreshInterval} />
-		// </div>
-// 	);
-// }

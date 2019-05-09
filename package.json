@@ -2,6 +2,7 @@
   "name": "imagine-testing-env",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://mbpmedia.com/imagine",
   "dependencies": {
     "@types/jest": "24.0.11",
     "@types/node": "11.13.8",

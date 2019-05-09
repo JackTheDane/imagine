@@ -14,23 +14,36 @@ export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
 }
 
+export enum IHistoryEventTypes {
+	add,
+	remove,
+	snapshot
+}
+
+export interface IHistory {
+	type: IHistoryEventTypes;
+	data: any;
+}
+
 export interface ArtistCanvasProps {
 	refreshInterval: number;
 	onNewEvents: (e: IGameEvent) => void;
+	width: number;
 }
 
 export interface ArtistCanvasState {
-	mouseIsOverTrashCan: boolean;
-	// history: any[];
+	history: IObjectSnapshot[];
+	historyIndex: number;
 }
 
 export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanvasState> {
 	private artistRef = createRef<HTMLCanvasElement>();
-	private trashCan = createRef<HTMLDivElement>();
 
 	private c: fabric.Canvas | undefined;
 
 	private storedCanvasEvents: ICanvasEvent[] = [];
+	private storedObjectEvents: IObjectChanges = {};
+
 	private objectsSnapshot: IObjectSnapshot = {};
 
 	private objectIndex: number = 0;
@@ -38,15 +51,25 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 	constructor(props: ArtistCanvasProps) {
 		super(props);
 		this.state = {
-			mouseIsOverTrashCan: false
-			// history: [],
+			history: [{}],
+			historyIndex: 0
 		};
 	}
 
 	public render() {
+
+		const {
+			width
+		} = this.props;
+
+		const {
+			history,
+			historyIndex
+		} = this.state;
+
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
-			height: 800,
-			width: 600
+			width,
+			height: width * (0.75)
 		};
 
 		return (
@@ -68,6 +91,19 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 					Add Homer
 				</button>
 
+				<button style={{ margin: 20, padding: 10, backgroundColor: 'red', color: '#fff', border: 'none' }} onClick={this.deleteSelected}>
+					Delete
+				</button>
+
+				<div>
+					<button disabled={historyIndex === 0} onClick={this.undoChanges}>
+						Undo
+					</button>
+					<button disabled={!history.length || historyIndex === history.length - 1} onClick={this.redoChanges}>
+						Redo
+					</button>
+				</div>
+
 				<div
 					style={{
 						display: 'flex',
@@ -83,15 +119,8 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 						<canvas {...canvasProps} className={s.artistCanvas} ref={this.artistRef} />
 					</div>
 
-					<div
-						ref={this.trashCan}
-						style={{
-							height: 800,
-							width: 200,
-							marginRight: 'auto',
-							backgroundColor: this.state.mouseIsOverTrashCan ? 'red' : 'pink'
-						}}
-					/>
+					{history.length > 0 && JSON.stringify(history[historyIndex])}
+
 				</div>
 			</div>
 		);
@@ -124,7 +153,6 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 			centeredRotation: true,
 			centeredScaling: true,
 			stopContextMenu: true
-			// allowTouchScrolling: true
 		});
 
 		fabric.Object.prototype.cornerStyle = 'circle';
@@ -132,15 +160,12 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		fabric.Object.prototype.originX = 'center';
 		fabric.Object.prototype.originY = 'center';
 		fabric.Object.prototype.lockScalingFlip = true;
+		fabric.Object.prototype.lockUniScaling = true;
 
-		fabric.Object.prototype.hasControls = !fabric.isTouchSupported;
-
-		fabric.Object.prototype.setControlsVisibility({
-			mt: false, // middle-top
-			ml: false, //middle-left
-			mr: false, //middle-right
-			mb: false //middle-bottom,
-		});
+		if (fabric.isTouchSupported) {
+			fabric.Object.prototype.hasControls = false;
+			fabric.Group.prototype.hasBorders = false;
+		}
 
 		this.addEventHandlers();
 
@@ -182,65 +207,175 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 	};
 
 	private addEventHandlers = (): void => {
-		if (!this.c || (!this.trashCan || !this.trashCan.current)) {
+		if (!this.c) {
 			return;
 		}
 
 		this.c.on('object:added', this.addNewImageToStored);
 		this.c.on('object:removed', this.addRemoveImageToStored)
+		this.c.on('selection:created', this.onSelectionCreateAndUpdate);
+		this.c.on('selection:updated', this.onSelectionCreateAndUpdate);
+		this.c.on('object:modified', e => {
+			// console.log('Object modified ', e);
+			this.setState(prevState => ({
+				history: [
+					...prevState.history, // Slice to only get the last 40 history snapshots. Optional: Use timeout?
+					this.objectsSnapshot
+				],
+				historyIndex: prevState.historyIndex + 1
+			}));
+			console.log(this.objectsSnapshot);
+		});
+		this.c.on('selection:updated', this.onSelectionCreateAndUpdate);
 
 		fabric.Object.prototype.on('mouseup', this.onMouseUp);
 
-		this.trashCan.current.addEventListener('mouseenter', () => {
-			this.setMouseOver(true);
-		});
-
-		this.trashCan.current.addEventListener('mouseleave', () => {
-			this.setMouseOver(false);
-		});
 	};
 
 	// -- Canvas - Event Callbacks
 
 	private onMouseUp = (e: fabric.IEvent) => {
-		console.log('mouse:up ', this.state.mouseIsOverTrashCan);
-		if (this.state.mouseIsOverTrashCan && this.c) {
-			const activeObjects: fabric.Object[] = this.c.getActiveObjects();
 
-			if (activeObjects && activeObjects.length > 0) {
-				// activeObjects.forEach( o => {
-				// 	o.bringToFront();
-				// });
-
-				this.c.remove(...this.c.getActiveObjects());
-				this.c.discardActiveObject();
-			}
-		}
 	};
+
+	private deleteSelected = () => {
+
+		if (!this.c) {
+			return;
+		}
+
+		const activeObjects: fabric.Object[] = this.c.getActiveObjects();
+
+		if (activeObjects && activeObjects.length > 0) {
+			this.c.remove(...this.c.getActiveObjects());
+			this.c.discardActiveObject();
+		}
+	}
+
+	private onSelectionCreateAndUpdate = (e: fabric.IEvent) => {
+		const s: fabric.IEvent & { selected: fabric.Object[] } = e as any;
+
+		console.log('Selection created, ', e);
+		if (!s || !s.selected || !this.c) {
+			return;
+		}
+
+		const objects: fabric.Object[] = this.c.getObjects('image')
+		const numberOfObjects: number = objects.length;
+
+
+		// If there are no objects or all objects are selected
+		if (numberOfObjects === 0 || numberOfObjects === s.selected.length) {
+			return;
+		}
+
+		s.selected.forEach((o: fabric.Object, i: number) => {
+
+			if (!o || o.name == null) {
+				return;
+			}
+
+			const currentIndex: number = objects.indexOf(o);
+			const newIndex: number = numberOfObjects - s.selected.length + i;
+
+			if (currentIndex === newIndex) {
+				return;
+			}
+
+			o.moveTo(newIndex);
+
+			this.addToStoredObjectEvents(
+				o.name,
+				{
+					type: ObjectEventTypes.moveTo,
+					data: newIndex
+				}
+			);
+		});
+	}
+
+	private addToStoredObjectEvents = (objectName: string, newEvent: IObjectEvent) => {
+		const events: IObjectEvent[] | undefined = this.storedObjectEvents[objectName];
+		this.storedObjectEvents[objectName] = events && events.length > 0
+			? [
+				...events,
+				newEvent
+			]
+			: [newEvent];
+	}
 
 	// -- Canvas - Adders -- //
 
-	private addImage = (src: string) => {
+	private addImage = (src: string, options?: fabric.IImageOptions, updateState: boolean = true) => {
+		if (!this.c) {
+			return;
+		}
+
 		fabric.Image.fromURL(
 			src,
-			(img) => {
+			img => {
 				if (this.c) {
+
+					if (updateState) {
+						console.log();
+						this.setState({
+							history: [
+								...this.state.history,
+								this.objectsSnapshot
+							],
+							historyIndex: this.state.historyIndex + 1
+						});
+					}
+
 					this.c.add(img);
 				}
 			},
 			{
-				name: 'o' + this.objectIndex++
+				name: 'o' + this.objectIndex++,
+				...options
 			}
 		);
 	};
 
 	// ---- Setters ---- //
 
-	private setMouseOver = (mouseIsOverTrashCan: boolean): void => {
-		this.setState({
-			mouseIsOverTrashCan
-		});
-	};
+	private createActiveGroupFromObjects = (objects: fabric.Object[]) => {
+		if (!this.c || objects.length === 0) {
+			return;
+		}
+
+		this.c.discardActiveObject();
+
+		let newActiveObject: fabric.Object;
+
+		if (objects.length === 1) {
+			newActiveObject = objects[0];
+		} else {
+
+			//FIXME: Needs waaaay more testing
+
+			// const group: fabric.Group = new fabric.Group();
+			// group.canvas = this.c;
+
+			// objects.forEach(o => {
+			// 	group.addWithUpdate(o);
+			// });
+
+			// newActiveObject = group;
+
+			const sel = new fabric.ActiveSelection(undefined, {
+				canvas: this.c,
+			});
+
+			objects.forEach(o => {
+				sel.addWithUpdate(o);
+			});
+
+			newActiveObject = sel;
+		}
+
+		this.c.setActiveObject(newActiveObject).requestRenderAll();
+	}
 
 	private addRemoveImageToStored = (e: fabric.IEvent): void => {
 		if (!e || !e.target || !e.target.name) {
@@ -269,6 +404,118 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		});
 	};
 
+	private undoChanges = () => {
+
+		const index: number = this.state.historyIndex - 1
+
+		if (
+			index < 0
+			|| index > this.state.history.length - 1
+			|| index === this.state.historyIndex
+		) {
+			return;
+		}
+
+		const history: IObjectSnapshot | undefined = this.state.history[index];
+
+		if (!history) {
+			return;
+		}
+
+		this.setObjectsFromSnapshot(history);
+	}
+
+	private redoChanges = () => {
+		// this.setObjectsFromHistoryIndex(this.state.historyIndex + 1);
+	}
+
+	// private setObjectsFromHistoryIndex = (index: number) => {
+
+	// 	if (
+	// 		index < 0
+	// 		|| index > this.state.history.length - 1
+	// 		|| index === this.state.historyIndex
+	// 	) {
+	// 		return;
+	// 	}
+
+	// 	const history: IHistory = this.state.history[index];
+
+	// 	if (!history) {
+	// 		return;
+	// 	}
+
+	// 	this.setObjectsFromSnapshot(history.data as IObjectSnapshot);
+	// 	this.setState({
+	// 		historyIndex: index
+	// 	});
+	// }
+
+	private setObjectsFromSnapshot = (snapshot: IObjectSnapshot) => {
+		if (!this.c || !snapshot) {
+			return;
+		}
+
+		const objects: fabric.Object[] = this.c.getObjects('image');
+		// const unknownObjects: fabric.Object[] = [];
+		let unusedNames: string[] = Object.keys(snapshot); // These are names that where not found on the canvas
+
+		for (let i = 0; i < objects.length; i++) {
+			const o = objects[i];
+
+			if (!o.name) {
+				continue;
+			}
+
+			const oSnapshot: ISavedFabricObject | undefined = snapshot[o.name];
+
+			// If the object does not exist in the snapshot
+			if (!oSnapshot) {
+				// If not found in the snapshot, remove it
+				this.c.remove(o);
+
+				continue;
+			}
+
+			// If the key was recognized
+
+			// Filter out the used name
+			unusedNames = unusedNames.filter(s => s !== o.name);
+
+			if (o.left !== oSnapshot.left) {
+				o.set('left', oSnapshot.left);
+			}
+
+
+			if (o.top !== oSnapshot.top) {
+				o.set('top', oSnapshot.top);
+			}
+
+			if (o.angle !== oSnapshot.angle) {
+				o.set('angle', oSnapshot.angle);
+			}
+
+			if (o.scaleX !== oSnapshot.scale) {
+				o.set('scaleX', oSnapshot.scale);
+				o.set('scaleY', oSnapshot.scale);
+			}
+		};
+
+		unusedNames.forEach((name: string) => {
+			const unUsedObject: ISavedFabricObject = snapshot[name];
+
+			this.addImage(unUsedObject.src, {
+				left: unUsedObject.left,
+				top: unUsedObject.top,
+				angle: unUsedObject.angle,
+				scaleX: unUsedObject.scale,
+				scaleY: unUsedObject.scale
+			}, false);
+		});
+
+		this.c.renderAll();
+	}
+
 	private setNewObjectToLocalSnapShot = (object: fabric.Object, snapShot: IObjectSnapshot) => {
 		// Check for object name and that it is not already set to the snapShot
 		if (object.name && !snapShot[object.name]) {
@@ -292,13 +539,14 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 			return;
 		}
 
-		const { top, left, scaleX, scaleY, angle, group } = object;
+		const { top, left, scaleX, scaleY, angle, group, getSrc } = object as fabric.Image;
 
 		const r: ISavedFabricObject = {
 			top: 0,
 			scale: 1,
 			left: 0,
-			angle: 0
+			angle: 0,
+			src: getSrc()
 		};
 
 		if (top != null) {
@@ -353,14 +601,12 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 			}
 		}
 
-		console.log({ group, top });
-		console.log(r.top);
-
 		return {
 			top: Math.round(r.top),
 			angle: Math.round(r.angle),
 			left: Math.round(r.left),
-			scale: +r.scale.toFixed(2) // Round down to two decimals. "+" ensures that a number is returned
+			scale: +r.scale.toFixed(2), // Round down to two decimals. "+" ensures that a number is returned
+			src: r.src
 		};
 	};
 
@@ -380,8 +626,9 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 				return;
 			}
 
+			const storedObjectChanges: IObjectEvent[] = this.storedObjectEvents[name];
 			const oldObject: ISavedFabricObject = this.objectsSnapshot[name];
-			const changesArray: IObjectEvent[] = [];
+			const changesArray: IObjectEvent[] = storedObjectChanges ? [...storedObjectChanges] : [];
 
 			// Check for changes in left coordinaties
 			if (newObject.left !== oldObject.left) {
@@ -403,10 +650,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 				changesArray.push({
 					type: ObjectEventTypes.angle,
-					data: {
-						old: oldObject.angle,
-						new: newObject.angle
-					}
+					data: newObject.angle
 				});
 			}
 
@@ -422,6 +666,9 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 				changes[name] = changesArray;
 			}
 		});
+
+		// Reset storedObjectEvents
+		this.storedObjectEvents = {};
 
 		return Object.keys(changes).length > 0 ? changes : false;
 	};
