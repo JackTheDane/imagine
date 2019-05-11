@@ -237,7 +237,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 
 	// ---- Image methods ---- //
 
-	private addImage = ({ name, src }: IImageInfo) => {
+	private addImage = ({ name, src, top, scale, left, angle }: IImageInfo) => {
 		if (!this.c || !name || !src) {
 			return;
 		}
@@ -250,7 +250,12 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 				}
 			},
 			{
-				name
+				name,
+				top,
+				left,
+				angle,
+				scaleX: scale,
+				scaleY: scale,
 			}
 		);
 	}
