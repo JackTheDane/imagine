@@ -8,10 +8,12 @@ import { ObjectEventTypes } from '../../models/ObjectEventTypes';
 import { IGameEvent } from '../../models/IGameEvent';
 import { IObjectChanges } from '../../models/IObjectChanges';
 import { IImageInfo } from '../../models/IImageInfo';
+import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
 
 export interface GuesserCanvasProps {
 	refreshInterval: number;
 	gameEvents: IGameEvent[];
+	scaleMultiplicationFactor: number;
 	width: number;
 }
 
@@ -176,11 +178,11 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 
 				switch (change.type) {
 					case ObjectEventTypes.top:
-						animationProperties.top = change.data as number;
+						animationProperties.top = this.getValueFromHeightScale(change.data as number);
 						break;
 
 					case ObjectEventTypes.left:
-						animationProperties.left = change.data as number;
+						animationProperties.left = this.getValueFromWidthScale(change.data as number);
 						break;
 
 					case ObjectEventTypes.moveTo:
@@ -207,9 +209,11 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 					}
 						break;
 
-					case ObjectEventTypes.scale:
-						animationProperties.scaleX = change.data as number;
-						animationProperties.scaleY = change.data as number;
+					case ObjectEventTypes.scale: {
+						const newScale: number = this.getValueFromWidthScale((change.data as number) / this.props.scaleMultiplicationFactor);
+						animationProperties.scaleX = newScale;
+						animationProperties.scaleY = newScale;
+					}
 						break;
 
 					default:
@@ -242,6 +246,8 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 			return;
 		}
 
+		const newScale: number = this.getValueFromWidthScale(scale / this.props.scaleMultiplicationFactor);
+
 		fabric.Image.fromURL(
 			src,
 			(img) => {
@@ -251,11 +257,11 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 			},
 			{
 				name,
-				top,
-				left,
+				top: this.getValueFromHeightScale(top),
+				left: this.getValueFromWidthScale(left),
 				angle,
-				scaleX: scale,
-				scaleY: scale,
+				scaleX: newScale,
+				scaleY: newScale,
 			}
 		);
 	}
@@ -272,4 +278,8 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 			this.c.remove(imageToRemove);
 		}
 	}
+
+	// ---- Utilities ---- //
+	private getValueFromHeightScale = (value: number): number => value * getCanvasHeightFromWidth(this.props.width);
+	private getValueFromWidthScale = (value: number): number => value * this.props.width;
 }

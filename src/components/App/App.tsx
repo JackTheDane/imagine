@@ -34,17 +34,19 @@ export class App extends React.Component<AppProps, AppState> {
 			gameEvents
 		} = this.state;
 
+		const canvasWidth: number = 500;
+
 		const commonProps = {
-			width: 500,
-			refreshInterval
+			refreshInterval,
+			scaleMultiplicationFactor: 100000
 		}
 
 		return (
 			<div>
 				{gameTime}
 				<div style={{ display: 'flex' }}>
-					<ArtistCanvas {...commonProps} onNewEvents={this.onNewEvent} />
-					<GuesserCanvas {...commonProps} gameEvents={gameEvents} />
+					<ArtistCanvas width={canvasWidth} {...commonProps} onNewEvents={this.onNewEvent} />
+					<GuesserCanvas width={canvasWidth / 2} {...commonProps} gameEvents={gameEvents} />
 				</div>
 			</div>
 		);

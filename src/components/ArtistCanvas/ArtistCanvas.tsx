@@ -11,6 +11,7 @@ import { IObjectChanges } from '../../models/IObjectChanges';
 import { getThirdPointInTriangle } from '../../utilities/getThirdPointInTriangle';
 import { getValueElse } from '../../utilities/getValueElse';
 import { IImageInfo } from '../../models/IImageInfo';
+import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
@@ -19,6 +20,7 @@ export interface IObjectSnapshot {
 export interface ArtistCanvasProps {
 	refreshInterval: number;
 	width: number;
+	scaleMultiplicationFactor: number;
 	onNewEvents: (e: IGameEvent) => void;
 }
 
@@ -60,7 +62,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
 			width,
-			height: width * (0.75)
+			height: getCanvasHeightFromWidth(width)
 		};
 
 		return (
@@ -109,8 +111,6 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 						<h3>Artist</h3>
 						<canvas {...canvasProps} className={s.artistCanvas} ref={this.artistRef} />
 					</div>
-
-					{/* {snapshotHistory.length > 0 && JSON.stringify(snapshotHistory[historyIndex])} */}
 				</div>
 			</div>
 		);
@@ -231,22 +231,23 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 			}
 
 			const image: fabric.Image = e.target as fabric.Image;
-			const savedFabricObject = this.getSavedFabricObjectFromObject(image);
+			const imageInfo: IImageInfo | undefined = this.getScaledImageInfo(image);
 
-			if (!savedFabricObject) {
+			if (!imageInfo) {
 				return;
 			}
 
-			console.log('Added');
-
-			const eventData: IImageInfo = {
-				...savedFabricObject,
-				name: e.target.name,
-			}
+			const {
+				scale,
+				...rest
+			} = imageInfo;
 
 			this.storedCanvasEvents.push({
 				type: CanvasEventTypes.add,
-				data: eventData
+				data: {
+					...rest,
+					scale: this.getScaledScale(scale)
+				}
 			});
 		});
 
@@ -365,6 +366,10 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 	// -- Canvas Utility -- //
 
+	private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.props.width);
+	private getValueToWidthScale = (value: number): number => value / this.props.width;
+	private getScaledScale = (scaleValue: number): number => Math.round(this.getValueToWidthScale(scaleValue) * this.props.scaleMultiplicationFactor);
+
 	private addToSnapshotToHistory = (snapshot: IObjectSnapshot = this.objectsSnapshot) => {
 
 		const {
@@ -377,7 +382,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		const newIndex: number = historyIndex + 1;
 		const newHistory: IObjectSnapshot[] = historyIndex < snapshotHistory.length - 1
 			? snapshotHistory.slice(0, newIndex)
-			: snapshotHistory
+			: snapshotHistory;
 
 
 		console.log(newIndex, ' ', snapshotHistory.length);
@@ -475,6 +480,8 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 			// If the a matching key was found between the two snapshots, remove it from "notYetUsedSnapshots"
 			notYetUsedSnapshots = notYetUsedSnapshots.filter((name: string): boolean => name !== o.name);
+
+			debugger;
 
 			// Check all of the properties for differences, and if any are found, set the object values to those of the snapshot
 			const checkAndSetProperty = (property: 'left' | 'top' | 'angle'): void => {
@@ -627,6 +634,30 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		this.c.setActiveObject(newActiveObject).requestRenderAll();
 	}
 
+	private getScaledImageInfo = (image: fabric.Image): IImageInfo | undefined => {
+
+		const savedFabricObject: ISavedFabricObject | undefined = this.getSavedFabricObjectFromObject(image);
+
+		if (!savedFabricObject || image.name == null) {
+			return;
+		}
+
+		const {
+			left,
+			top,
+			...rest
+		} = savedFabricObject;
+
+		return ({
+			...rest,
+			top: this.getValueToHeightScale(top),
+			left: this.getValueToWidthScale(left),
+			name: image.name,
+			// height: this.getValueToHeightScale(image.height),
+			// width: this.getValueToWidthScale(image.width)
+		});
+	}
+
 	/**
 	 * Returns an ISavedFabricObject from a fabric.Object.
 	 * This includes the coordinates of any group that the object might be part of.
@@ -641,30 +672,12 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		const { top, left, scaleX, scaleY, angle, group } = object;
 
 		const r: ISavedFabricObject = {
-			top: 0,
-			scale: 1,
-			left: 0,
-			angle: 0,
+			top: getValueElse(top, 0),
+			scale: getValueElse(scaleX || scaleY, 0),
+			left: getValueElse(left, 0),
+			angle: getValueElse(angle, 0),
 			src: (object as fabric.Image).getSrc()
 		};
-
-		if (top != null) {
-			r.top += top;
-		}
-
-		if (left != null) {
-			r.left += left;
-		}
-
-		if (angle != null) {
-			r.angle += angle;
-		}
-
-		if (scaleX != null) {
-			r.scale = scaleX;
-		} else if (scaleY != null) {
-			r.scale = scaleY;
-		}
 
 		if (group) {
 
@@ -704,7 +717,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 			top: Math.round(r.top),
 			angle: Math.round(r.angle),
 			left: Math.round(r.left),
-			scale: +r.scale.toFixed(2), // Round down to two decimals. "+" ensures that a number is returned
+			scale: r.scale,
 			src: r.src
 		};
 	};
@@ -733,14 +746,14 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 			if (newObject.left !== oldObject.left) {
 				changesArray.push({
 					type: ObjectEventTypes.left,
-					data: newObject.left
+					data: this.getValueToWidthScale(newObject.left)
 				});
 			}
 
 			if (newObject.top !== oldObject.top) {
 				changesArray.push({
 					type: ObjectEventTypes.top,
-					data: newObject.top
+					data: this.getValueToHeightScale(newObject.top)
 				});
 			}
 
@@ -757,7 +770,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 			if (newObject.scale !== oldObject.scale) {
 				changesArray.push({
 					type: ObjectEventTypes.scale,
-					data: newObject.scale
+					data: this.getScaledScale(newObject.scale)
 				});
 			}
 
