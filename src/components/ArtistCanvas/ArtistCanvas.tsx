@@ -97,6 +97,24 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 					</button>
 				</div>
 
+				<div style={{
+					height: 40,
+					width: 40,
+					backgroundColor: 'purple'
+				}}
+					draggable={true}
+					onDragStart={e => {
+						console.log('Howdy!');
+						e.dataTransfer.dropEffect = 'move';
+						e.dataTransfer.setData('text', 'https://vignette.wikia.nocookie.net/simpsons/images/2/26/Woo_hoo%21_poster.jpg/revision/latest?cb=20111121223950');
+
+						console.log(e.dataTransfer.getData('text'));
+
+						return e;
+					}}
+
+				/>
+
 				<div
 					style={{
 						display: 'flex',
@@ -143,7 +161,11 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		this.c = new fabric.Canvas(this.artistRef.current, {
 			centeredRotation: true,
 			centeredScaling: true,
-			stopContextMenu: true
+			stopContextMenu: true,
+			// // Grabbing cursor?
+			// hoverCursor: 'grab',
+			// moveCursor: 'grabbing',
+			// rotationCursor: '' Rotation cursor
 		});
 
 		// Set Object settings
@@ -153,6 +175,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		fabric.Object.prototype.originY = 'center';
 		fabric.Object.prototype.lockScalingFlip = true;
 		fabric.Object.prototype.lockUniScaling = true;
+
 
 		if (fabric.isTouchSupported) {
 			fabric.Object.prototype.hasControls = false;
@@ -222,6 +245,70 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		if (!this.c) {
 			return;
 		}
+
+		// TODO: Research how this drag and drop works.
+
+		this.c.on('dragenter', e => {
+			// console.log(e.dataTransfer);
+			console.log('Dragenter');
+
+			if (!e || !e.e) {
+				console.log('No drop event');
+				return;
+			}
+
+			const event: any = e.e;
+
+			if (!event.dataTransfer || !event.dataTransfer.getData) {
+				console.log('No data transfer');
+				return;
+			}
+
+			const dataTransfer: string = event.dataTransfer.getData('text');
+
+			console.log(dataTransfer);
+		});
+
+		this.c.on('dragleave', () => {
+			console.log('Dragleave');
+		});
+
+		this.c.on('drop', e => {
+
+			try {
+				// If no event or no original event was passed with the event, return empty
+				if (!e || !e.e) {
+					console.log('No drop event');
+					return;
+				}
+
+				const event: any = e.e;
+
+				if (!event.dataTransfer || !event.dataTransfer.getData) {
+					console.log('No data transfer');
+					return;
+				}
+
+				const dataTransfer: string = event.dataTransfer.getData('text');
+
+				if (!dataTransfer) {
+					console.log('No data or canvas');
+					return;
+				}
+
+				this.addNewImageToCanvas(
+					dataTransfer,
+					{
+						top: getValueElse(event.offsetY, 0),
+						left: getValueElse(event.offsetX, 0)
+					}
+				);
+				console.log('Transfer success');
+			} catch (error) {
+				console.log('Error while getting drop data: ', error);
+			}
+
+		});
 
 		// Add and remove
 		this.c.on('object:added', (e: fabric.IEvent): void => {
@@ -480,8 +567,6 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 			// If the a matching key was found between the two snapshots, remove it from "notYetUsedSnapshots"
 			notYetUsedSnapshots = notYetUsedSnapshots.filter((name: string): boolean => name !== o.name);
-
-			debugger;
 
 			// Check all of the properties for differences, and if any are found, set the object values to those of the snapshot
 			const checkAndSetProperty = (property: 'left' | 'top' | 'angle'): void => {
