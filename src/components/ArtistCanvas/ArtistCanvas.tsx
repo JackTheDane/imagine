@@ -688,6 +688,12 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 						// This ensures that an image cannot scale to be smaller than 80px on its smallest scale (Height or width)
 						img.minScaleLimit = 150 / smallestAxis;
+
+						if (img.minScaleLimit > 1) {
+							img.scaleX = img.minScaleLimit;
+							img.scaleY = img.minScaleLimit;
+						}
+
 						this.c.add(img);
 						resolve(img);
 					}
