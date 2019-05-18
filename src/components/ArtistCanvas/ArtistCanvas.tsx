@@ -103,12 +103,39 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 					backgroundColor: 'purple'
 				}}
 					draggable={true}
+					// onDoubleClick={e => {
+
+					// 	if (e.preventDefault) {
+					// 		e.preventDefault();
+					// 	}
+
+					// 	console.log('Add image');
+
+					// 	const src: string = 'https://vignette.wikia.nocookie.net/simpsons/images/2/26/Woo_hoo%21_poster.jpg/revision/latest?cb=20111121223950'
+
+					// 	this.addNewImageToCanvas(src);
+
+					// }}
 					onDragStart={e => {
+
+						// if (e.preventDefault) {
+						// 	e.preventDefault();
+						// }
+
 						console.log('Howdy!');
 						e.dataTransfer.dropEffect = 'move';
-						e.dataTransfer.setData('text', 'https://vignette.wikia.nocookie.net/simpsons/images/2/26/Woo_hoo%21_poster.jpg/revision/latest?cb=20111121223950');
 
-						console.log(e.dataTransfer.getData('text'));
+						const src: string = 'https://vignette.wikia.nocookie.net/simpsons/images/2/26/Woo_hoo%21_poster.jpg/revision/latest?cb=20111121223950'
+
+						e.dataTransfer.setData('text', src);
+
+						const img = new Image();
+
+						img.src = src;
+
+						e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
+
+						console.log('img: ', img);
 
 						return e;
 					}}
@@ -161,7 +188,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		this.c = new fabric.Canvas(this.artistRef.current, {
 			centeredRotation: true,
 			centeredScaling: true,
-			stopContextMenu: true,
+			stopContextMenu: true
 			// // Grabbing cursor?
 			// hoverCursor: 'grab',
 			// moveCursor: 'grabbing',
@@ -170,6 +197,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 		// Set Object settings
 		fabric.Object.prototype.cornerStyle = 'circle';
+
 		fabric.Object.prototype.borderOpacityWhenMoving = 0;
 		fabric.Object.prototype.originX = 'center';
 		fabric.Object.prototype.originY = 'center';
@@ -251,22 +279,6 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		this.c.on('dragenter', e => {
 			// console.log(e.dataTransfer);
 			console.log('Dragenter');
-
-			if (!e || !e.e) {
-				console.log('No drop event');
-				return;
-			}
-
-			const event: any = e.e;
-
-			if (!event.dataTransfer || !event.dataTransfer.getData) {
-				console.log('No data transfer');
-				return;
-			}
-
-			const dataTransfer: string = event.dataTransfer.getData('text');
-
-			console.log(dataTransfer);
 		});
 
 		this.c.on('dragleave', () => {
@@ -670,6 +682,12 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 				src,
 				(img: fabric.Image) => {
 					if (this.c) {
+
+						// Get the smallest axis of the image
+						const smallestAxis: number = (img.width as number) >= (img.height as number) ? (img.width as number) : (img.height as number);
+
+						// This ensures that an image cannot scale to be smaller than 80px on its smallest scale (Height or width)
+						img.minScaleLimit = 150 / smallestAxis;
 						this.c.add(img);
 						resolve(img);
 					}
