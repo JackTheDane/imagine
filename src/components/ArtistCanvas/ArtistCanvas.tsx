@@ -761,9 +761,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 			...rest,
 			top: this.getValueToHeightScale(top),
 			left: this.getValueToWidthScale(left),
-			name: image.name,
-			// height: this.getValueToHeightScale(image.height),
-			// width: this.getValueToWidthScale(image.width)
+			name: image.name
 		});
 	}
 
