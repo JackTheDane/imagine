@@ -1,43 +1,19 @@
 {
-  "name": "imagine-testing-env",
-  "version": "0.1.0",
-  "private": true,
-  "homepage": "https://mbpmedia.com/imagine",
-  "dependencies": {
-    "@types/jest": "24.0.11",
-    "@types/node": "11.13.8",
-    "@types/react": "16.8.14",
-    "@types/react-dom": "16.8.4",
-    "fabric-with-gestures": "^2.7.0",
-    "interactjs": "^1.4.0",
-    "node-sass": "^4.12.0",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "react-scripts": "3.0.0",
-    "typescript": "3.4.5"
-  },
+  "name": "imagine",
+  "version": "1.0.0",
+  "description": "The complete \"Imagine\" project",
+  "main": "index.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "eslintConfig": {
-    "extends": "react-app"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JackTheDane/imagine.git"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JackTheDane/imagine/issues"
   },
-  "devDependencies": {
-    "@types/fabric": "^2.6.10"
-  }
+  "homepage": "https://github.com/JackTheDane/imagine#readme"
 }

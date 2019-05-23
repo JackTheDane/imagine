@@ -1,0 +1,23 @@
+{
+  "name": "imagine-server",
+  "version": "1.0.0",
+  "description": "The server counterpart to the Imagine project",
+  "main": "build/index.js",
+  "scripts": {
+    "tsc": "tsc",
+    "dev": "ts-node-dev --respawn --transpileOnly ./app/app.ts",
+    "prod": "tsc && node ./build/app.js"
+  },
+  "author": "Martin Petersen",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.0",
+    "socket.io": "^2.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.16.1",
+    "@types/socket.io": "^2.1.2",
+    "ts-node-dev": "^1.0.0-pre.39",
+    "typescript": "^3.4.5"
+  }
+}
