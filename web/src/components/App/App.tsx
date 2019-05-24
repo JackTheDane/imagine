@@ -3,12 +3,12 @@ import React from 'react';
 import { ArtistCanvas } from '../ArtistCanvas/ArtistCanvas';
 import { IGameEvent } from '../../models/IGameEvent';
 import { GuesserCanvas } from '../GuesserCanvas/GuesserCanvas';
+import io from 'socket.io-client';
+import { refreshInterval } from '../../config/refreshInterval';
 
-const refreshInterval: number = 100; // Refresh rate in Miliseconds
 const canvasWidth: number = 500;
 
 const commonProps = {
-	refreshInterval,
 	scaleMultiplicationFactor: 100000
 }
 
@@ -22,6 +22,9 @@ export interface AppState {
 }
 
 export class App extends React.Component<AppProps, AppState> {
+
+	private socket: SocketIOClient.Socket = io('http://localhost:3001')
+
 	constructor(props: AppProps) {
 		super(props);
 		this.state = {
@@ -44,8 +47,8 @@ export class App extends React.Component<AppProps, AppState> {
 			<div>
 				{gameTime}
 				<div style={{ display: 'flex' }}>
-					<ArtistCanvas width={canvasWidth} {...commonProps} />
-					<GuesserCanvas width={canvasWidth / 2} {...commonProps} gameEvents={gameEvents} />
+					<ArtistCanvas ioSocket={this.socket} width={canvasWidth} {...commonProps} />
+					<GuesserCanvas ioSocket={this.socket} width={canvasWidth / 2} {...commonProps} gameEvents={gameEvents} />
 				</div>
 			</div>
 		);

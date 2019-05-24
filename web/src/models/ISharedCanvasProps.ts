@@ -1,4 +1,4 @@
 export interface ISharedCanvasProps {
   width: number;
-  ioClient: SocketIOClientStatic;
+  ioSocket: SocketIOClient.Socket;
 }

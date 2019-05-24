@@ -8,13 +8,13 @@ import { ObjectEventTypes } from '../../models/ObjectEventTypes';
 import { IGameEvent } from '../../models/IGameEvent';
 import { IObjectChanges } from '../../models/IObjectChanges';
 import { IImageInfo } from '../../models/IImageInfo';
+import { ISharedCanvasProps } from '../../models/ISharedCanvasProps';
 import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
+import { refreshInterval } from '../../config/refreshInterval';
 
-export interface GuesserCanvasProps {
-	refreshInterval: number;
+export interface GuesserCanvasProps extends ISharedCanvasProps {
 	gameEvents: IGameEvent[];
 	scaleMultiplicationFactor: number;
-	width: number;
 }
 
 export interface GuesserCanvasState { }
@@ -59,6 +59,23 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 
 	public componentDidMount(): void {
 		this.init();
+
+		this.props.ioSocket.on('event', (event: string) => {
+
+			try {
+				const newUpdate: IGameEvent = JSON.parse(event);
+
+				if (newUpdate.cEvents) {
+					this.translateAndExecuteCanvasEvents(newUpdate.cEvents);
+				}
+
+				if (newUpdate.oEvents) {
+					this.translateAndExecuteObjectEvents(newUpdate.oEvents);
+				}
+			} catch (error) {
+				console.log('Error parsing event, ', error);
+			}
+		});
 	}
 
 	public componentWillUnmount(): void {
@@ -225,7 +242,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 			(o as any).animate(
 				animationProperties,
 				{
-					duration: this.props.refreshInterval,
+					duration: refreshInterval,
 					// easing: fabric.util.ease.easeInOutCubic,
 					easing: (t: number, b: number, c: number, d: number): number => c * t / d + b,
 					onChange: (e: any) => {

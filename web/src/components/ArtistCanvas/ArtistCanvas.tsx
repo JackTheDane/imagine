@@ -889,13 +889,12 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 	// Socket.io interactions
 	private sendCanvasChange = (event: IGameEvent) => {
-
-		if (this.socket) {
-
+		if (!this.props.ioSocket) {
+			return;
 		}
 
 		console.log('Send event');
 
-		socket.emit("message", `HELLO WORLD - `);
+		this.props.ioSocket.emit("event", JSON.stringify(event));
 	}
 }

@@ -21,12 +21,13 @@ console.log('Woop');
 
 // whenever a user connects on port 3000 via
 // a websocket, log that a user has connected
-io.sockets.on('connection', function (socket: any) {
+io.sockets.on('connection', function (socket: socketio.Socket) {
   console.log("a user connected");
 
   // whenever we receive a 'message' we log it out
-  socket.on("message", function (message: any) {
-    console.log(message);
+  socket.on("event", (event: string) => {
+    console.log(event);
+    io.emit('event', event);
   });
 });
 
