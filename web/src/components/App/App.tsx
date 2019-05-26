@@ -1,16 +1,13 @@
 import React from 'react';
 // import s from './App.module.scss';
 import { ArtistCanvas } from '../ArtistCanvas/ArtistCanvas';
-import { IGameEvent } from '../../models/IGameEvent';
 import { GuesserCanvas } from '../GuesserCanvas/GuesserCanvas';
 import io from 'socket.io-client';
 import { refreshInterval } from '../../config/refreshInterval';
+import { PlayerRoles } from '../../models/PlayerRoles';
+import { Player } from '../../models/Player';
 
-const canvasWidth: number = 500;
-
-const commonProps = {
-	scaleMultiplicationFactor: 100000
-}
+const canvasWidth: number = 1000;
 
 export interface AppProps {
 
@@ -18,12 +15,12 @@ export interface AppProps {
 
 export interface AppState {
 	gameTime: number;
-	gameEvents: IGameEvent[];
+	currentPlayer: Player | undefined;
 }
 
 export class App extends React.Component<AppProps, AppState> {
 
-	private socket: SocketIOClient.Socket = io('http://localhost:3001')
+	private socket: SocketIOClient.Socket = io('http://localhost:3001');
 
 	constructor(props: AppProps) {
 		super(props);
@@ -32,7 +29,7 @@ export class App extends React.Component<AppProps, AppState> {
 			 * GameTime in miliseconds
 			 */
 			gameTime: 0,
-			gameEvents: []
+			currentPlayer: undefined
 		};
 	}
 
@@ -40,41 +37,58 @@ export class App extends React.Component<AppProps, AppState> {
 
 		const {
 			gameTime,
-			gameEvents
+			currentPlayer
 		} = this.state;
+
+		if (!currentPlayer || currentPlayer.role == null) {
+			return <div>
+				Loading...
+			</div>;
+		}
+
+		const commonCanvasProps: any = {
+			ioSocket: this.socket,
+			width: canvasWidth
+		}
+
+		const canvasElement: JSX.Element = currentPlayer.role === PlayerRoles.Guesser
+			? <GuesserCanvas {...commonCanvasProps} />
+			: <ArtistCanvas {...commonCanvasProps} />;
 
 		return (
 			<div>
 				{gameTime}
-				<div style={{ display: 'flex' }}>
-					<ArtistCanvas ioSocket={this.socket} width={canvasWidth} {...commonProps} />
-					<GuesserCanvas ioSocket={this.socket} width={canvasWidth / 2} {...commonProps} gameEvents={gameEvents} />
+				<div>
+					{canvasElement}
 				</div>
 			</div>
 		);
 	}
 
-	public componentDidMount() {
+	public componentDidMount(): void {
 		setInterval(this.incrementTimer, refreshInterval);
+
+		this.socket.on('connect', () => {
+			this.socket.emit('joinLobby', 'TestLobbyName');
+
+			this.socket.on('wasAddedToGame', (info: Player) => {
+				this.setState({
+					currentPlayer: info
+				});
+			});
+
+			this.socket.on('newRole', (newRole: PlayerRoles) => {
+				if (this.state.currentPlayer && newRole == null) {
+					this.setState({
+						currentPlayer: { ...this.state.currentPlayer, role: newRole }
+					}
+					);
+				}
+			});
+		});
 	}
 
-	// private onNewEvent = (e: IGameEvent) => {
-	// 	const {
-	// 		gameEvents
-	// 	} = this.state;
-	// 	// Get a copy of the game events
-	// 	const allEvents: IGameEvent[] = [...gameEvents, e];
-
-	// 	// console.log({allEvents});
-
-	// 	// Set events to state
-	// 	this.setState({
-	// 		gameEvents: allEvents
-	// 	});
-	// }
-
 	private incrementTimer = () => {
-
 		const newTime = Math.round(this.state.gameTime + refreshInterval);
 
 		this.setState({

@@ -15,13 +15,13 @@ import { getValueElse } from '../../utilities/getValueElse';
 import { IImageInfo } from '../../models/IImageInfo';
 import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
 import { refreshInterval } from '../../config/refreshInterval';
+import { scaleFactor } from '../../config/scaleFactor';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
 }
 
 export interface ArtistCanvasProps extends ISharedCanvasProps {
-	scaleMultiplicationFactor: number;
 }
 
 export interface ArtistCanvasState {
@@ -462,7 +462,7 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 	private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.props.width);
 	private getValueToWidthScale = (value: number): number => value / this.props.width;
-	private getScaledScale = (scaleValue: number): number => Math.round(this.getValueToWidthScale(scaleValue) * this.props.scaleMultiplicationFactor);
+	private getScaledScale = (scaleValue: number): number => Math.round(this.getValueToWidthScale(scaleValue) * scaleFactor);
 
 	private addToSnapshotToHistory = (snapshot: IObjectSnapshot = this.objectsSnapshot) => {
 

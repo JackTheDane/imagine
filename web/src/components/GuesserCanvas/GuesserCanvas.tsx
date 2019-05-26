@@ -11,11 +11,9 @@ import { IImageInfo } from '../../models/IImageInfo';
 import { ISharedCanvasProps } from '../../models/ISharedCanvasProps';
 import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
 import { refreshInterval } from '../../config/refreshInterval';
+import { scaleFactor } from '../../config/scaleFactor';
 
-export interface GuesserCanvasProps extends ISharedCanvasProps {
-	gameEvents: IGameEvent[];
-	scaleMultiplicationFactor: number;
-}
+export interface GuesserCanvasProps extends ISharedCanvasProps { }
 
 export interface GuesserCanvasState { }
 
@@ -84,35 +82,6 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		}
 	}
 
-	public componentDidUpdate(prevProps: GuesserCanvasProps, prevState: GuesserCanvasState): void {
-
-		const {
-			gameEvents
-		} = this.props;
-
-		if (
-			prevProps.gameEvents
-			&& gameEvents
-			&& prevProps.gameEvents.length < gameEvents.length
-		) {
-			const newUpdate: IGameEvent = gameEvents[gameEvents.length - 1];
-
-			if (!newUpdate) {
-				return;
-			}
-
-			if (newUpdate.cEvents) {
-				this.translateAndExecuteCanvasEvents(newUpdate.cEvents);
-			}
-
-			if (newUpdate.oEvents) {
-				this.translateAndExecuteObjectEvents(newUpdate.oEvents);
-			}
-
-			// console.log(newUpdate);
-		}
-	}
-
 	// ---- Canvas Interactions ---- //
 
 	private init = () => {
@@ -127,6 +96,11 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		this.c = new fabric.StaticCanvas(this.canvasRef.current);
 
 		fabric.Object.prototype.lockUniScaling = true;
+		fabric.Object.prototype.centeredRotation = true;
+		fabric.Object.prototype.centeredScaling = true;
+		fabric.Object.prototype.originX = 'center';
+		fabric.Object.prototype.originY = 'center';
+
 	};
 
 	// -- Implementing canvas changes -- //
@@ -227,7 +201,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 						break;
 
 					case ObjectEventTypes.scale: {
-						const newScale: number = this.getValueFromWidthScale((change.data as number) / this.props.scaleMultiplicationFactor);
+						const newScale: number = this.getValueFromWidthScale((change.data as number) / scaleFactor);
 						animationProperties.scaleX = newScale;
 						animationProperties.scaleY = newScale;
 					}
@@ -263,7 +237,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 			return;
 		}
 
-		const newScale: number = this.getValueFromWidthScale(scale / this.props.scaleMultiplicationFactor);
+		const newScale: number = this.getValueFromWidthScale(scale / scaleFactor);
 
 		fabric.Image.fromURL(
 			src,
