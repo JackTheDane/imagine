@@ -78,7 +78,7 @@ export class App extends React.Component<AppProps, AppState> {
 			});
 
 			this.socket.on('newRole', (newRole: PlayerRoles) => {
-				if (this.state.currentPlayer && newRole == null) {
+				if (this.state.currentPlayer && newRole != null) {
 					this.setState({
 						currentPlayer: { ...this.state.currentPlayer, role: newRole }
 					}
