@@ -9,15 +9,15 @@ export const topics: {
 } = {
   film: {
     name: 'Film',
-    iconName: 'film'
+    iconName: 'movie'
   },
   fictionalCharacter: {
     name: 'Fictional Character',
-    iconName: 'user-astronaut'
+    iconName: 'face'
   },
   event: {
     name: 'Event',
-    iconName: 'rocket'
+    iconName: 'event'
   },
   book: {
     name: 'Book',
@@ -29,6 +29,6 @@ export const topics: {
   },
   videoGame: {
     name: 'Video Game',
-    iconName: 'gamepad'
+    iconName: 'videogame_asset'
   }
 }

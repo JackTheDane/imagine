@@ -1,37 +1,42 @@
 import React, { createRef } from 'react';
-import s from './ArtistCanvas.module.scss';
+import s from './ArtistView.module.scss';
 import { fabric } from 'fabric';
-import { ISavedFabricObject } from '../../models/ISavedFabricObject';
-import { ICanvasEvent } from '../../models/ICanvasEvent';
-import { CanvasEventTypes } from '../../models/CanvasEventTypes';
-import { IObjectEvent } from '../../models/IObjectEvent';
-import { ObjectEventTypes } from '../../models/ObjectEventTypes';
-import { IGameEvent } from '../../models/IGameEvent';
-import { IObjectChanges } from '../../models/IObjectChanges';
-import { ISharedCanvasProps } from '../../models/ISharedCanvasProps';
+import { ISavedFabricObject } from '../../../models/ISavedFabricObject';
+import { ICanvasEvent } from '../../../models/ICanvasEvent';
+import { CanvasEventTypes } from '../../../models/CanvasEventTypes';
+import { IObjectEvent } from '../../../models/IObjectEvent';
+import { ObjectEventTypes } from '../../../models/ObjectEventTypes';
+import { IGameEvent } from '../../../models/IGameEvent';
+import { IObjectChanges } from '../../../models/IObjectChanges';
+import { ISharedViewProps } from '../../../models/ISharedViewProps';
 
-import { getThirdPointInTriangle } from '../../utilities/getThirdPointInTriangle';
-import { getValueElse } from '../../utilities/getValueElse';
-import { IImageInfo } from '../../models/IImageInfo';
-import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
-import { refreshInterval } from '../../config/refreshInterval';
-import { scaleFactor } from '../../config/scaleFactor';
-import { Subject } from '../../models/Subject';
+import { getThirdPointInTriangle } from '../../../utilities/getThirdPointInTriangle';
+import { getValueElse } from '../../../utilities/getValueElse';
+import { IImageInfo } from '../../../models/IImageInfo';
+import { getCanvasHeightFromWidth } from '../../../utilities/getCanvasHeightFromWidth';
+import { refreshInterval } from '../../../config/refreshInterval';
+import { scaleFactor } from '../../../config/scaleFactor';
+import { Subject } from '../../../models/Subject';
+import { ArtistToolbar } from './Toolbar/ArtistToolbar';
+import { Drawer, Fab, Icon } from '@material-ui/core';
+import { FigureDrawer } from './FigureDrawer/FigureDrawer';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
 }
 
-export interface ArtistCanvasProps extends ISharedCanvasProps {
+export interface ArtistViewProps extends ISharedViewProps {
 }
 
-export interface ArtistCanvasState {
+export interface ArtistViewState {
 	snapshotHistory: IObjectSnapshot[];
 	historyIndex: number;
+	itemsSelected: boolean;
 }
 
-export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanvasState> {
+export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState> {
 	private artistRef = createRef<HTMLCanvasElement>();
+	private _isMounted: boolean;
 
 	private c: fabric.Canvas | undefined;
 
@@ -42,39 +47,45 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 	private objectIndex: number = 0;
 
-	constructor(props: ArtistCanvasProps) {
+	constructor(props: ArtistViewProps) {
 		super(props);
+
+		this._isMounted = true;
+
 		this.state = {
 			snapshotHistory: [{}],
-			historyIndex: 0
+			historyIndex: 0,
+			itemsSelected: false
 		};
 	}
 
 	public render() {
 
 		const {
-			width
+			canvasWidth
 		} = this.props;
 
 		const {
 			snapshotHistory,
-			historyIndex
+			historyIndex,
+			itemsSelected
 		} = this.state;
 
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
-			width,
-			height: getCanvasHeightFromWidth(width)
+			width: canvasWidth,
+			height: getCanvasHeightFromWidth(canvasWidth)
 		};
 
 		return (
 			<div>
-				<button
+
+				{/* <button
 					onClick={() => this.addNewImageToCanvas('https://upload.wikimedia.org/wikipedia/en/f/f1/Tomruen_test.svg')}
 					style={{ margin: 20, padding: 10 }}
 				>
 					Add SVG
-				</button>
-
+				</button> */}
+				{/*
 				<button
 					onClick={() =>
 						this.addNewImageToCanvas(
@@ -83,9 +94,9 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 					style={{ margin: 20, padding: 10 }}
 				>
 					Add Homer
-				</button>
+				</button> */}
 
-				<button style={{ margin: 20, padding: 10, backgroundColor: 'red', color: '#fff', border: 'none' }} onClick={this.deleteActiveObjects}>
+				{/* <button style={{ margin: 20, padding: 10, backgroundColor: 'red', color: '#fff', border: 'none' }} onClick={this.deleteActiveObjects}>
 					Delete
 				</button>
 
@@ -96,66 +107,53 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 					<button disabled={!snapshotHistory.length || historyIndex === snapshotHistory.length - 1} onClick={this.onRedoChanges}>
 						Redo
 					</button>
-				</div>
-
-				<div style={{
-					height: 40,
-					width: 40,
-					backgroundColor: 'purple'
-				}}
-					draggable={true}
-					// onDoubleClick={e => {
-
-					// 	if (e.preventDefault) {
-					// 		e.preventDefault();
-					// 	}
-
-					// 	console.log('Add image');
-
-					// 	const src: string = 'https://vignette.wikia.nocookie.net/simpsons/images/2/26/Woo_hoo%21_poster.jpg/revision/latest?cb=20111121223950'
-
-					// 	this.addNewImageToCanvas(src);
-
-					// }}
-					onDragStart={e => {
-
-						// if (e.preventDefault) {
-						// 	e.preventDefault();
-						// }
-
-						console.log('Howdy!');
-						e.dataTransfer.dropEffect = 'move';
-
-						const src: string = 'https://vignette.wikia.nocookie.net/simpsons/images/2/26/Woo_hoo%21_poster.jpg/revision/latest?cb=20111121223950'
-
-						e.dataTransfer.setData('text', src);
-
-						const img = new Image();
-
-						img.src = src;
-
-						e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
-
-						console.log('img: ', img);
-
-						return e;
-					}}
-
-				/>
+				</div> */}
 
 				<div
 					style={{
 						display: 'flex',
-						justifyContent: 'space-between',
 						width: '100%',
-						padding: '0 40px',
-						boxSizing: 'border-box',
-						alignItems: 'flex-end'
+						boxSizing: 'border-box'
 					}}
 				>
+					<FigureDrawer mobileOpen={false} onAddImage={() => { }} />
+
 					<div className={s.artistCanvasWrapper}>
-						<h3>Artist</h3>
+
 						<canvas {...canvasProps} className={s.artistCanvas} ref={this.artistRef} />
+
+						<div style={{
+							position: 'absolute',
+							top: 10,
+							left: 10,
+							display: 'flex'
+						}}>
+							{/* <Fab color="primary" onClick={() => { console.log('Add image!'); }}>
+								<Icon>
+									add_to_photos
+								</Icon>
+							</Fab> */}
+							<ArtistToolbar
+								buttonProps={[
+									{
+										iconName: 'undo',
+										isDisabled: historyIndex === 0,
+										onClick: this.onUndoChanges
+									},
+									{
+										iconName: 'redo',
+										isDisabled: !snapshotHistory.length || historyIndex === snapshotHistory.length - 1,
+										onClick: this.onRedoChanges
+									},
+									{
+										iconName: 'delete',
+										onClick: this.deleteActiveObjects,
+										shouldHide: !itemsSelected,
+										color: 'red'
+									}
+								]}
+							/>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -173,7 +171,10 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		ioSocket.emit('ready');
 
 		ioSocket.on('newSubjectChoices', (newSubjects: Subject[]) => {
-			console.log(newSubjects);
+
+			if (!this._isMounted || !newSubjects) {
+				return;
+			}
 
 			// TODO: Add support for choosing a subject
 			ioSocket.emit('newSubjectChosen', newSubjects[0]);
@@ -186,6 +187,8 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		if (this.c) {
 			this.c.dispose();
 		}
+
+		this._isMounted = false;
 
 		const {
 			ioSocket
@@ -373,8 +376,6 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 				return;
 			}
 
-			console.log('Removed');
-
 			// Push new canvas event
 			this.storedCanvasEvents.push({
 				type: CanvasEventTypes.remove,
@@ -385,6 +386,11 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		// Selection
 		this.c.on('selection:created', this.onSelectionCreateAndUpdate);
 		this.c.on('selection:updated', this.onSelectionCreateAndUpdate);
+		this.c.on('selection:cleared', () => {
+			this.setState({
+				itemsSelected: false
+			});
+		});
 
 		// Object modification
 		this.c.on('object:modified', e => {
@@ -431,6 +437,10 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		if (!s || !s.selected || !this.c) {
 			return;
 		}
+
+		this.setState({
+			itemsSelected: true
+		});
 
 		// Get all the objects and their length
 		const objects: fabric.Object[] = this.c.getObjects('image')
@@ -483,8 +493,8 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 
 	// -- Canvas Utility -- //
 
-	private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.props.width);
-	private getValueToWidthScale = (value: number): number => value / this.props.width;
+	private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.props.canvasWidth);
+	private getValueToWidthScale = (value: number): number => value / this.props.canvasWidth;
 	private getScaledScale = (scaleValue: number): number => Math.round(this.getValueToWidthScale(scaleValue) * scaleFactor);
 
 	private addToSnapshotToHistory = (snapshot: IObjectSnapshot = this.objectsSnapshot) => {
@@ -497,20 +507,18 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 		// TODO: Add a check to see if the number of history events exceeds a maximun (40?) to prevent overburdening the memory
 
 		const newIndex: number = historyIndex + 1;
+
 		const newHistory: IObjectSnapshot[] = historyIndex < snapshotHistory.length - 1
 			? snapshotHistory.slice(0, newIndex)
 			: snapshotHistory;
 
-
-		console.log(newIndex, ' ', snapshotHistory.length);
-
-		this.setState(prevState => ({
+		this.setState({
 			snapshotHistory: [
 				...newHistory,
 				snapshot
 			],
 			historyIndex: newIndex
-		}));
+		});
 	}
 
 	private addToStoredObjectEvents = (objectName: string, newEvent: IObjectEvent) => {

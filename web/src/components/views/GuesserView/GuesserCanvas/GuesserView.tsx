@@ -1,35 +1,38 @@
 import React, { createRef } from 'react';
-import s from './GuesserCanvas.module.scss';
+import s from './GuesserView.module.scss';
 import { fabric } from 'fabric';
-import { ICanvasEvent } from '../../models/ICanvasEvent';
-import { CanvasEventTypes } from '../../models/CanvasEventTypes';
-import { IObjectEvent } from '../../models/IObjectEvent';
-import { ObjectEventTypes } from '../../models/ObjectEventTypes';
-import { IGameEvent } from '../../models/IGameEvent';
-import { IObjectChanges } from '../../models/IObjectChanges';
-import { IImageInfo } from '../../models/IImageInfo';
-import { ISharedCanvasProps } from '../../models/ISharedCanvasProps';
-import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
-import { refreshInterval } from '../../config/refreshInterval';
-import { scaleFactor } from '../../config/scaleFactor';
-import { SubjectPlacerholder } from '../../models/SubjectPlaceholder';
+import { ICanvasEvent } from '../../../../models/ICanvasEvent';
+import { CanvasEventTypes } from '../../../../models/CanvasEventTypes';
+import { IObjectEvent } from '../../../../models/IObjectEvent';
+import { ObjectEventTypes } from '../../../../models/ObjectEventTypes';
+import { IGameEvent } from '../../../../models/IGameEvent';
+import { IObjectChanges } from '../../../../models/IObjectChanges';
+import { IImageInfo } from '../../../../models/IImageInfo';
+import { ISharedViewProps } from '../../../../models/ISharedViewProps';
+import { getCanvasHeightFromWidth } from '../../../../utilities/getCanvasHeightFromWidth';
+import { refreshInterval } from '../../../../config/refreshInterval';
+import { scaleFactor } from '../../../../config/scaleFactor';
+import { SubjectPlacerholder } from '../../../../models/SubjectPlaceholder';
 
-export interface GuesserCanvasProps extends ISharedCanvasProps { }
+export interface GuesserViewProps extends ISharedViewProps { }
 
-export interface GuesserCanvasState {
+export interface GuesserViewState {
 	placeholder?: SubjectPlacerholder;
 	numberOfPlaceholderFields: number;
 	guessText: string;
 	lastGuessIncorrect: boolean;
 }
 
-export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCanvasState> {
+export class GuesserView extends React.Component<GuesserViewProps, GuesserViewState> {
 	private canvasRef = createRef<HTMLCanvasElement>();
 	private c: fabric.StaticCanvas | undefined;
 	private inputRef = createRef<HTMLInputElement>();
+	private _isMounted: boolean;
 
-	constructor(props: GuesserCanvasProps) {
+	constructor(props: GuesserViewProps) {
 		super(props);
+
+		this._isMounted = true;
 
 		this.state = {
 			placeholder: undefined,
@@ -42,7 +45,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 	public render() {
 
 		const {
-			width
+			canvasWidth
 		} = this.props;
 
 		const {
@@ -50,8 +53,8 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		} = this.state;
 
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
-			width,
-			height: width * (0.75)
+			width: canvasWidth,
+			height: canvasWidth * (0.75)
 		};
 
 		return (
@@ -61,7 +64,6 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 						display: 'flex',
 						justifyContent: 'space-between',
 						width: '100%',
-						padding: '0 40px',
 						boxSizing: 'border-box',
 						alignItems: 'flex-end'
 					}}
@@ -97,7 +99,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		ioSocket.emit('ready');
 
 		ioSocket.on('newSubject', (placeholder: SubjectPlacerholder) => {
-			if (!placeholder || !placeholder.placeholder) {
+			if (!this._isMounted || !placeholder || !placeholder.placeholder) {
 				return;
 			}
 
@@ -116,6 +118,10 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 
 
 		ioSocket.on('event', (event: string) => {
+
+			if (!this._isMounted) {
+				return;
+			}
 
 			try {
 				const newUpdate: IGameEvent = JSON.parse(event);
@@ -137,6 +143,8 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		if (this.c) {
 			this.c.dispose();
 		}
+
+		this._isMounted = false;
 
 		const {
 			ioSocket
@@ -204,6 +212,7 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 				}}
 			>
 				<span>
+					<i className="material-icons"> {placeholder.topic.iconName} </i>
 					{placeholder.topic.name}
 				</span>
 				<div style={{ display: 'flex' }}>
@@ -476,6 +485,6 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 	}
 
 	// ---- Utilities ---- //
-	private getValueFromHeightScale = (value: number): number => value * getCanvasHeightFromWidth(this.props.width);
-	private getValueFromWidthScale = (value: number): number => value * this.props.width;
+	private getValueFromHeightScale = (value: number): number => value * getCanvasHeightFromWidth(this.props.canvasWidth);
+	private getValueFromWidthScale = (value: number): number => value * this.props.canvasWidth;
 }

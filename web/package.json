@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "https://mbpmedia.com/imagine",
   "dependencies": {
+    "@material-ui/core": "^4.0.1",
     "@types/jest": "24.0.11",
     "@types/node": "11.13.8",
     "@types/react": "16.8.14",
