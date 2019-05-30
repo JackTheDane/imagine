@@ -12,20 +12,42 @@ import { ISharedCanvasProps } from '../../models/ISharedCanvasProps';
 import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
 import { refreshInterval } from '../../config/refreshInterval';
 import { scaleFactor } from '../../config/scaleFactor';
+import { SubjectPlacerholder } from '../../models/SubjectPlaceholder';
 
 export interface GuesserCanvasProps extends ISharedCanvasProps { }
 
-export interface GuesserCanvasState { }
+export interface GuesserCanvasState {
+	placeholder?: SubjectPlacerholder;
+	numberOfPlaceholderFields: number;
+	guessText: string;
+	lastGuessIncorrect: boolean;
+}
 
 export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCanvasState> {
 	private canvasRef = createRef<HTMLCanvasElement>();
 	private c: fabric.StaticCanvas | undefined;
+	private inputRef = createRef<HTMLInputElement>();
+
+	constructor(props: GuesserCanvasProps) {
+		super(props);
+
+		this.state = {
+			placeholder: undefined,
+			numberOfPlaceholderFields: 0,
+			guessText: '',
+			lastGuessIncorrect: false
+		}
+	}
 
 	public render() {
 
 		const {
 			width
 		} = this.props;
+
+		const {
+			guessText
+		} = this.state;
 
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
 			width,
@@ -45,7 +67,17 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 					}}
 				>
 					<div className={s.wrapper}>
-						<h3>Guesser</h3>
+						<div style={{ display: 'flex' }}>
+							<h3>Guesser</h3>
+							{guessText}
+							<input
+								className={s.guessInput}
+								ref={this.inputRef}
+								onChange={this.onInputChange}
+								value={guessText}
+							/>
+							{this.getPlaceholderUI()}
+						</div>
 						<canvas {...canvasProps} className={s.canvas} ref={this.canvasRef} />
 					</div>
 				</div>
@@ -58,7 +90,32 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 	public componentDidMount(): void {
 		this.init();
 
-		this.props.ioSocket.on('event', (event: string) => {
+		const {
+			ioSocket
+		} = this.props;
+
+		ioSocket.emit('ready');
+
+		ioSocket.on('newSubject', (placeholder: SubjectPlacerholder) => {
+			if (!placeholder || !placeholder.placeholder) {
+				return;
+			}
+
+			const numberOfPlaceholderFields: number = placeholder.placeholder.reduce(
+				(accumulator, currentValue) => accumulator + currentValue
+			);
+
+			console.log(placeholder);
+			this.setState({
+				placeholder,
+				numberOfPlaceholderFields,
+				guessText: ''
+			});
+		});
+
+
+
+		ioSocket.on('event', (event: string) => {
 
 			try {
 				const newUpdate: IGameEvent = JSON.parse(event);
@@ -80,6 +137,154 @@ export class GuesserCanvas extends React.Component<GuesserCanvasProps, GuesserCa
 		if (this.c) {
 			this.c.dispose();
 		}
+
+		const {
+			ioSocket
+		} = this.props;
+
+		if (ioSocket) {
+			ioSocket.off('newSubject');
+			ioSocket.off('event');
+		}
+	}
+
+	// ---- UI ---- //
+
+	private onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+		const {
+			placeholder,
+			numberOfPlaceholderFields
+		} = this.state;
+
+		this.setState({
+			lastGuessIncorrect: false
+		});
+
+		const newText: string = e.target.value.replace(/\s/g, '');
+
+		if (
+			!placeholder
+			|| !placeholder.placeholder
+			|| !numberOfPlaceholderFields
+		) {
+			return;
+		}
+
+		// If the text is longer than the number of placeholder fields, return
+		if (numberOfPlaceholderFields < newText.length) {
+			return;
+		}
+
+		this.setState({
+			guessText: newText
+		});
+	}
+
+	private getPlaceholderUI = (): JSX.Element | undefined => {
+		const {
+			placeholder,
+			guessText,
+			numberOfPlaceholderFields,
+			lastGuessIncorrect
+		} = this.state;
+
+		const guessTextLength: number = guessText.length;
+		const guessTextArray: string[] = guessText.split('');
+		let overAllIndex: number = -1;
+
+		return placeholder && (
+			<div
+				className={s.placeholderWrapper}
+				style={{ display: 'flex' }}
+				onClick={() => {
+					if (this.inputRef && this.inputRef.current) {
+						this.inputRef.current.focus();
+					}
+				}}
+			>
+				<span>
+					{placeholder.topic.name}
+				</span>
+				<div style={{ display: 'flex' }}>
+					{placeholder.placeholder.map(
+						(numberOfLetters: number, j: number): JSX.Element => (
+							<div key={`ph${j}`} style={{ display: 'flex', marginRight: 15 }}>
+								{
+									Array.apply(null, Array(numberOfLetters)).map(
+										(undef: any, i: number): JSX.Element => {
+											overAllIndex++;
+											return (
+												<div
+													key={`phl${i}`}
+													style={{
+														backgroundColor: lastGuessIncorrect ? 'red' : 'white'
+													}}
+													className={`
+													${s.textPlaceholderElem}
+													${guessTextArray.length > 0
+															? s.filledPlaceholder
+															: overAllIndex === guessTextLength
+																? s.activePlaceholderField
+																: ''
+														}`}
+												>
+													{guessTextArray.length > 0 && guessTextArray.shift()}
+												</div>
+											)
+										}
+									)
+								}
+							</div>
+						)
+					)}
+				</div>
+				<button
+					onClick={this.onGuessSubmission}
+					disabled={guessText.length < numberOfPlaceholderFields}
+				>
+					Submit
+				</button>
+			</div>
+		);
+	}
+
+	// Guess submission
+	private onGuessSubmission = () => {
+		const {
+			ioSocket
+		} = this.props;
+
+		const {
+			guessText,
+			placeholder
+		} = this.state;
+
+		if (
+			!ioSocket
+			|| !guessText
+			|| !placeholder
+			|| !placeholder.placeholder
+		) {
+			return;
+		}
+
+		let lastIndex: number = 0;
+
+		const guessTextWithSpaces: string = placeholder.placeholder.map((ph: number): string => {
+			const newIndex: number = lastIndex + ph;
+			const slice: string = guessText.slice(lastIndex, newIndex);
+
+			lastIndex = newIndex;
+			return slice;
+		}).join(' ');
+
+		// Emit the guess text
+		ioSocket.emit('guess', guessTextWithSpaces, (answerWasCorrect: boolean) => {
+			this.setState({
+				lastGuessIncorrect: !answerWasCorrect
+			});
+		});
 	}
 
 	// ---- Canvas Interactions ---- //

@@ -1,4 +1,6 @@
-import { PlayerRoles } from './PlayerRoles';
+import { PlayerRoles } from '../enums/PlayerRoles';
+import { v4 as uuidv4 } from 'uuid';
+
 export class Player {
   constructor(
     id: string,
@@ -9,6 +11,7 @@ export class Player {
     this.name = name;
     this.role = role;
     this.score = 0;
+    this.guid = uuidv4();
   }
 
   // Properties
@@ -16,6 +19,7 @@ export class Player {
   readonly name: string;
   private score: number;
   public role: PlayerRoles;
+  readonly guid: string;
 
   // Methods
   public getScore = (): number => {

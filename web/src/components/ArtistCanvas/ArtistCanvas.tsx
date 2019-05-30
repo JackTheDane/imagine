@@ -16,6 +16,7 @@ import { IImageInfo } from '../../models/IImageInfo';
 import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
 import { refreshInterval } from '../../config/refreshInterval';
 import { scaleFactor } from '../../config/scaleFactor';
+import { Subject } from '../../models/Subject';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
@@ -164,12 +165,34 @@ export class ArtistCanvas extends React.Component<ArtistCanvasProps, ArtistCanva
 	// ---- Life Cycles Methods ---- //
 
 	public componentDidMount(): void {
+
+		const {
+			ioSocket
+		} = this.props;
+
+		ioSocket.emit('ready');
+
+		ioSocket.on('newSubjectChoices', (newSubjects: Subject[]) => {
+			console.log(newSubjects);
+
+			// TODO: Add support for choosing a subject
+			ioSocket.emit('newSubjectChosen', newSubjects[0]);
+		});
+
 		this.init();
 	}
 
 	public componentWillUnmount(): void {
 		if (this.c) {
 			this.c.dispose();
+		}
+
+		const {
+			ioSocket
+		} = this.props;
+
+		if (ioSocket) {
+			ioSocket.off('newSubjectChoices');
 		}
 	}
 

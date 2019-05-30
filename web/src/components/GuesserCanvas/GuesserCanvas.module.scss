@@ -5,3 +5,48 @@
 .wrapper {
   margin-top: auto;
 }
+
+.textPlaceholderElem {
+  height: 40px;
+  width: 20px;
+  border-bottom: 2px solid grey;
+  margin-right: 5px;
+}
+
+.filledPlaceholder {
+  border-bottom-color: black;
+}
+
+.placeholderWrapper {
+  display: flex;
+  cursor: text;
+
+  opacity: .5;
+  transition: opacity .1s;
+}
+
+.guessInput {
+  // Chrome on mobile flips this if set to 0?
+  width: 0.1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+
+  &:focus + .placeholderWrapper {
+
+    opacity: 1;
+
+    .activePlaceholderField {
+      animation: activePulse .6s linear both alternate infinite;
+    }
+  }
+}
+
+@keyframes activePulse {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: .3;
+  }
+}
