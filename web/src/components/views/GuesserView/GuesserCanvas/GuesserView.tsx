@@ -14,7 +14,9 @@ import { refreshInterval } from '../../../../config/refreshInterval';
 import { scaleFactor } from '../../../../config/scaleFactor';
 import { SubjectPlacerholder } from '../../../../models/SubjectPlaceholder';
 
-export interface GuesserViewProps extends ISharedViewProps { }
+export interface GuesserViewProps extends ISharedViewProps {
+	onGuess: (guess: string) => void;
+}
 
 export interface GuesserViewState {
 	placeholder?: SubjectPlacerholder;
@@ -71,7 +73,6 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 					<div className={s.wrapper}>
 						<div style={{ display: 'flex' }}>
 							<h3>Guesser</h3>
-							{guessText}
 							<input
 								className={s.guessInput}
 								ref={this.inputRef}
@@ -287,6 +288,11 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			lastIndex = newIndex;
 			return slice;
 		}).join(' ');
+
+		if (this.props.onGuess) {
+			this.props.onGuess(guessTextWithSpaces);
+		}
+
 
 		// Emit the guess text
 		ioSocket.emit('guess', guessTextWithSpaces, (answerWasCorrect: boolean) => {
