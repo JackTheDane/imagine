@@ -825,16 +825,12 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 				}
 			}
 
-			if (group.scaleX != null && group.scaleX !== 1) {
-				r.scale = r.scale * group.scaleX;
-				r.top = r.top * group.scaleX;
-				r.left = r.left * group.scaleX;
+			const scalingFactor: number = group.scaleX || group.scaleY || 1;
 
-			} else if (group.scaleY != null && group.scaleY !== 1) {
-				r.scale = r.scale * group.scaleY;
-				r.top = r.top * group.scaleY;
-
-				r.left = r.left * group.scaleY;
+			if (scalingFactor !== 1) {
+				r.scale *= scalingFactor;
+				r.top *= scalingFactor;
+				r.left *= scalingFactor;
 			}
 
 			if (group.top != null) {
