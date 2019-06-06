@@ -19,12 +19,15 @@ export function getThirdPointInTriangle(x0: number, y0: number, x1: number, y1: 
       ]);
     }
 
+    // Get the distance between point and center
     const l = Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2));
 
+    // Return if no distance
     if (l === 0) {
       return [x1, y1];
     }
 
+    // Get degrees in radian
     const Arad: number = ((angle > 0 ? angle : 360 - angle) * Math.PI) / 180; //degrees to radians
 
     //unit vector
@@ -35,6 +38,7 @@ export function getThirdPointInTriangle(x0: number, y0: number, x1: number, y1: 
     let uABx: number;
     let uABy: number;
 
+    // Populate the vectors
     if (angle > 0) {
       uABx = uAx1 * Math.cos(Arad) - uAy1 * Math.sin(Arad);
       uABy = uAx1 * Math.sin(Arad) + uAy1 * Math.cos(Arad);
@@ -43,10 +47,12 @@ export function getThirdPointInTriangle(x0: number, y0: number, x1: number, y1: 
       uABy = - uAx1 * Math.sin(Arad) + uAy1 * Math.cos(Arad);
     }
 
+    // Return new coordinates
     return ([
       x0 + l * uABx,
       y0 + l * uABy
     ]);
+
   } catch (error) {
     return ([
       x1,

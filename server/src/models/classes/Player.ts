@@ -7,6 +7,7 @@ import { getRandomSubjects } from '../../actions/getRandomSubjects';
 import { Subject } from '../interfaces/Subject';
 
 export class Player {
+
   constructor(
     socket: socketio.Socket,
     gameLobby: GameLobby,
@@ -15,11 +16,11 @@ export class Player {
   ) {
     this.socket = socket;
     this.gameLobby = gameLobby;
-    this.id = this.socket.id;
+    this.id = this.socket.id; // Get the internal player ID
     this.name = name;
     this.role = role;
     this.score = 0;
-    this.guid = uuidv4();
+    this.guid = uuidv4(); // Genereate GUID for external use
 
     // Join the lobby
     this.socket.join(gameLobby.roomName);
@@ -105,9 +106,9 @@ export class Player {
     });
 
     // Canvas events
-    this.socket.on('event', (event: string) => {
+    this.socket.on('cEvent', (cEvent: string) => {
       // Emit event to all other members of the lobby
-      this.socket.to(this.gameLobby.roomName).emit('event', event);
+      this.socket.to(this.gameLobby.roomName).emit('cEvent', cEvent);
     });
   }
 }

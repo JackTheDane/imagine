@@ -118,7 +118,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 
 
-		ioSocket.on('event', (event: string) => {
+		ioSocket.on('cEvent', (event: string) => {
 
 			if (!this._isMounted) {
 				return;
@@ -153,7 +153,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 		if (ioSocket) {
 			ioSocket.off('newSubject');
-			ioSocket.off('event');
+			ioSocket.off('cEvent');
 		}
 	}
 

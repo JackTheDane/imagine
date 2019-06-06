@@ -79,36 +79,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		return (
 			<div>
 
-				{/* <button
-					onClick={() => this.addNewImageToCanvas('https://upload.wikimedia.org/wikipedia/en/f/f1/Tomruen_test.svg')}
-					style={{ margin: 20, padding: 10 }}
-				>
-					Add SVG
-				</button> */}
-				{/*
-				<button
-					onClick={() =>
-						this.addNewImageToCanvas(
-							'https://vignette.wikia.nocookie.net/simpsons/images/2/26/Woo_hoo%21_poster.jpg/revision/latest?cb=20111121223950'
-						)}
-					style={{ margin: 20, padding: 10 }}
-				>
-					Add Homer
-				</button> */}
-
-				{/* <button style={{ margin: 20, padding: 10, backgroundColor: 'red', color: '#fff', border: 'none' }} onClick={this.deleteActiveObjects}>
-					Delete
-				</button>
-
-				<div>
-					<button disabled={historyIndex === 0} onClick={this.onUndoChanges}>
-						Undo
-					</button>
-					<button disabled={!snapshotHistory.length || historyIndex === snapshotHistory.length - 1} onClick={this.onRedoChanges}>
-						Redo
-					</button>
-				</div> */}
-
 				<div
 					style={{
 						display: 'flex',
@@ -922,6 +892,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 		console.log('Send event');
 
-		this.props.ioSocket.emit("event", JSON.stringify(event));
+		this.props.ioSocket.emit('cEvent', JSON.stringify(event));
 	}
 }

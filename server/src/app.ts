@@ -6,33 +6,30 @@ import * as path from 'path';
 import * as http from 'http';
 import { Player } from './models/classes/Player';
 
-const app: express.Application = express();
-
-app.set("port", process.env.PORT || 3001);
-
-const appServer = http.createServer(app);
-// set up socket.io and bind it to our
-// http server.
-const io: socketio.Server = socketio(appServer);
-
 // Active game lobbies
 let gameLobbies: GameLobby[] = [];
 
+// ---- Server setup ---- //
 
-// whenever a user connects on port 3000 via
-// a websocket, log that a user has connected
+const app: express.Application = express(); // Start Express
+app.set("port", process.env.PORT || 3001); // Set port
+const appServer = http.createServer(app); // Create server
+
+
+// ---- Socket.IO setup ---- //
+
+const io: socketio.Server = socketio(appServer); // Run IO server
+
+// Listen for WebSocket connections
 io.sockets.on('connection', (socket: socketio.Socket) => {
-  console.log("a user connected");
-  addEventListenersToSocket(socket);
+  console.log("a user connected"); // Log user connection
+
+  addEventListenersToSocket(socket); // Add Socket event listeners
 });
 
 const server: http.Server = appServer.listen(app.get('port'), () => {
   console.log('listening on *:' + app.get('port'));
 });
-
-
-
-
 
 // ---- Utilities ---- //
 
@@ -118,9 +115,3 @@ function removeLobbyFromGameLobbies(gameLobby: GameLobby): boolean {
     return false;
   }
 }
-
-
-// app.get("/", (req: any, res: any) => {
-//   console.log('Sent file');
-//   res.sendFile(path.resolve("./client/index.html"));
-// });

@@ -102,13 +102,6 @@ export class App extends React.Component<AppProps, AppState> {
 						)}
 
 					</List>
-					{/* <div>
-						{players.map((p, i) => <div key={`player-${i}`} style={{ color: p.role !== PlayerRoles.Artist ? 'black' : 'red' }}>
-							{p.name}
-							-
-							{p.score}
-						</div>)}
-					</div> */}
 				</div>
 			);
 
@@ -123,8 +116,7 @@ export class App extends React.Component<AppProps, AppState> {
 					<DialogTitle id="form-dialog-title">Enter username</DialogTitle>
 					<DialogContent>
 						<DialogContentText>
-							To subscribe to this website, please enter your email address here. We will send updates
-							occasionally.
+							Welcome to Imagine! Please enter your username to connect to the lobby.
           	</DialogContentText>
 						<TextField
 							autoFocus
@@ -174,11 +166,11 @@ export class App extends React.Component<AppProps, AppState> {
 		});
 	}
 
-	private connectToLobby = () => {
+	private connectToLobby = () => { // Hard-coded lobby name for testing
 		this.socket.emit('joinLobby', 'TestLobbyName', this.state.playerName, (playerInfo: Player, otherPlayers: Player[]) => {
 
 			if (!playerInfo || !otherPlayers) {
-				console.log('Erorr setting player info');
+				console.log('Error setting player info');
 				return;
 			}
 
