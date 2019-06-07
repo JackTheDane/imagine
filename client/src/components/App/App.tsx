@@ -1,12 +1,12 @@
 import React from 'react';
 // import s from './App.module.scss';
 import { ArtistView } from '../views/ArtistView/ArtistView';
-import { GuesserView } from '../views/GuesserView/GuesserCanvas/GuesserView';
+import { GuesserView } from '../views/GuesserView/GuesserView';
 import io from 'socket.io-client';
-import { PlayerRoles } from '../../models/PlayerRoles';
-import { Player } from '../../models/Player';
-import { getCanvasHeightFromWidth } from '../../utilities/getCanvasHeightFromWidth';
-import { getCanvasWidthFromHeight } from '../../utilities/getCanvasWidthFromHeight';
+import { PlayerRoles } from '../../models/enums/PlayerRoles';
+import { Player } from '../../models/interfaces/Player';
+import { getCanvasHeightFromWidth } from '../../utils/getCanvasHeightFromWidth';
+import { getCanvasWidthFromHeight } from '../../utils/getCanvasWidthFromHeight';
 import {
 	Dialog,
 	DialogTitle,
@@ -24,9 +24,9 @@ import {
 	ListItemText,
 	Divider
 } from '@material-ui/core';
-import { ISharedViewProps } from '../../models/ISharedViewProps';
+import { ISharedViewProps } from '../../models/interfaces/ISharedViewProps';
 import { AutoSnackbar } from '../AutoSnackbar/AutoSnackbar';
-import { IMessage } from '../../models/IMessage';
+import { IMessage } from '../../models/interfaces/IMessage';
 
 export interface AppProps {
 

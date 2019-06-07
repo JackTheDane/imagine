@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Drawer, TextField, Grid } from '@material-ui/core';
 import s from './FigureDrawer.module.scss';
 import { figures as startFigures } from '../../../../config/figures';
-import { IFigure } from '../../../../models/IFigure';
+import { IFigure } from '../../../../models/interfaces/IFigure';
 import { Figure } from './Figure/Figure';
 
 export interface FigureDrawerProps {

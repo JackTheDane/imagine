@@ -1,4 +1,4 @@
-import { IFigure } from '../models/IFigure';
+import { IFigure } from '../models/interfaces/IFigure';
 
 export const figures: IFigure[] = [
   {

@@ -1,4 +1,4 @@
-import { PlayerRoles } from "./PlayerRoles";
+import { PlayerRoles } from "../enums/PlayerRoles";
 
 export interface Player {
   guid: string;

@@ -3,7 +3,7 @@ import { PlayerRoles } from '../enums/PlayerRoles';
 import { v4 as uuidv4 } from 'uuid';
 import * as socketio from 'socket.io';
 import { ClientPlayer } from '../interfaces/ClientPlayer';
-import { getRandomSubjects } from '../../actions/getRandomSubjects';
+import { getRandomSubjects } from '../../utils/getRandomSubjects';
 import { Subject } from '../interfaces/Subject';
 
 export class Player {

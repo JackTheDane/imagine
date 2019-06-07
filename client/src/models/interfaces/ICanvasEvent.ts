@@ -1,4 +1,4 @@
-import { CanvasEventTypes } from "./CanvasEventTypes";
+import { CanvasEventTypes } from "../enums/CanvasEventTypes";
 
 export interface ICanvasEvent {
 	/**
