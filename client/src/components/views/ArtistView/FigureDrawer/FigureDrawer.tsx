@@ -10,7 +10,7 @@ export interface FigureDrawerProps {
   onAddImage: (src: string) => void;
 }
 
-export function FigureDrawer({ }: FigureDrawerProps): JSX.Element {
+export function FigureDrawer({ mobileOpen, onAddImage }: FigureDrawerProps): JSX.Element {
 
   const [filter, setFilter] = React.useState<string>('');
   const [figures, setFigures] = React.useState<IFigure[]>([...startFigures]);

@@ -62,7 +62,6 @@ export class App extends React.Component<AppProps, AppState> {
 		const {
 			currentPlayer,
 			canvasWidth,
-			players,
 			showNameDialog,
 			userGuesses
 		} = this.state;

@@ -18,7 +18,6 @@ import { refreshInterval } from '../../../config/refreshInterval';
 import { scaleFactor } from '../../../config/scaleFactor';
 import { Subject } from '../../../models/interfaces/Subject';
 import { ArtistToolbar } from './Toolbar/ArtistToolbar';
-import { Drawer, Fab, Icon } from '@material-ui/core';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
 
 export interface IObjectSnapshot {
