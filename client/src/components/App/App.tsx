@@ -101,13 +101,6 @@ export class App extends React.Component<AppProps, AppState> {
 						)}
 
 					</List>
-					{/* <div>
-						{players.map((p, i) => <div key={`player-${i}`} style={{ color: p.role !== PlayerRoles.Artist ? 'black' : 'red' }}>
-							{p.name}
-							-
-							{p.score}
-						</div>)}
-					</div> */}
 				</div>
 			);
 
@@ -122,8 +115,7 @@ export class App extends React.Component<AppProps, AppState> {
 					<DialogTitle id="form-dialog-title">Enter username</DialogTitle>
 					<DialogContent>
 						<DialogContentText>
-							To subscribe to this website, please enter your email address here. We will send updates
-							occasionally.
+							Please enter your username to enter the lobby
           	</DialogContentText>
 						<TextField
 							autoFocus

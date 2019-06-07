@@ -919,8 +919,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			return;
 		}
 
-		console.log('Send event');
-
-		this.props.ioSocket.emit("event", JSON.stringify(event));
+		this.props.ioSocket.emit("cEvent", JSON.stringify(event));
 	}
 }

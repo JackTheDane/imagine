@@ -66,10 +66,8 @@ export class Player {
   private addEventListeners() {
     // Artist Ready
     this.socket.on('ready', () => {
-      const artistPlayer: Player = this.gameLobby.getOrSetArtistPlayer();
-
       // Check that the player is the Artist of the game
-      if (artistPlayer.id === this.id) {
+      if (this.gameLobby.checkPlayerRole(PlayerRoles.Artist, this)) {
         // Send Subject choices
         this.socket.emit('newSubjectChoices', getRandomSubjects(3, this.gameLobby.getPreviousSubjects()));
       } else { // If player is a Guesser, send currentSubject
@@ -88,7 +86,7 @@ export class Player {
 
       const artistPlayer: Player = this.gameLobby.getOrSetArtistPlayer();
 
-      if (!subject || artistPlayer.id !== this.id) {
+      if (!subject || this.gameLobby.checkPlayerRole(PlayerRoles.Artist, this)) {
         return;
       }
 
@@ -105,9 +103,9 @@ export class Player {
     });
 
     // Canvas events
-    this.socket.on('event', (event: string) => {
+    this.socket.on('cEvent', (event: string) => {
       // Emit event to all other members of the lobby
-      this.socket.to(this.gameLobby.roomName).emit('event', event);
+      this.socket.to(this.gameLobby.roomName).emit('cEvent', event);
     });
   }
 }

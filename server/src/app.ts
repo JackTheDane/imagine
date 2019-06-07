@@ -118,9 +118,3 @@ function removeLobbyFromGameLobbies(gameLobby: GameLobby): boolean {
     return false;
   }
 }
-
-
-// app.get("/", (req: any, res: any) => {
-//   console.log('Sent file');
-//   res.sendFile(path.resolve("./client/index.html"));
-// });
