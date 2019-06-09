@@ -19,6 +19,7 @@ import { scaleFactor } from '../../../config/scaleFactor';
 import { Subject } from '../../../models/interfaces/Subject';
 import { ArtistToolbar } from './Toolbar/ArtistToolbar';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
+import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
@@ -31,6 +32,8 @@ export interface ArtistViewState {
 	snapshotHistory: IObjectSnapshot[];
 	historyIndex: number;
 	itemsSelected: boolean;
+	availableSubjectChoices: Subject[];
+	openSubjectDialog: boolean;
 }
 
 export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState> {
@@ -54,7 +57,9 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		this.state = {
 			snapshotHistory: [{}],
 			historyIndex: 0,
-			itemsSelected: false
+			itemsSelected: false,
+			openSubjectDialog: false,
+			availableSubjectChoices: []
 		};
 	}
 
@@ -67,7 +72,9 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		const {
 			snapshotHistory,
 			historyIndex,
-			itemsSelected
+			itemsSelected,
+			availableSubjectChoices,
+			openSubjectDialog
 		} = this.state;
 
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
@@ -77,36 +84,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 		return (
 			<div>
-
-				{/* <button
-					onClick={() => this.addNewImageToCanvas('https://upload.wikimedia.org/wikipedia/en/f/f1/Tomruen_test.svg')}
-					style={{ margin: 20, padding: 10 }}
-				>
-					Add SVG
-				</button> */}
-				{/*
-				<button
-					onClick={() =>
-						this.addNewImageToCanvas(
-							'https://vignette.wikia.nocookie.net/simpsons/images/2/26/Woo_hoo%21_poster.jpg/revision/latest?cb=20111121223950'
-						)}
-					style={{ margin: 20, padding: 10 }}
-				>
-					Add Homer
-				</button> */}
-
-				{/* <button style={{ margin: 20, padding: 10, backgroundColor: 'red', color: '#fff', border: 'none' }} onClick={this.deleteActiveObjects}>
-					Delete
-				</button>
-
-				<div>
-					<button disabled={historyIndex === 0} onClick={this.onUndoChanges}>
-						Undo
-					</button>
-					<button disabled={!snapshotHistory.length || historyIndex === snapshotHistory.length - 1} onClick={this.onRedoChanges}>
-						Redo
-					</button>
-				</div> */}
 
 				<div
 					style={{
@@ -132,6 +109,14 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 									add_to_photos
 								</Icon>
 							</Fab> */}
+
+							{
+								openSubjectDialog && availableSubjectChoices && availableSubjectChoices.length && (
+									<SubjectChoiceDialog onSelectedSubject={this.onSubjectSelected} availableSubjects={availableSubjectChoices} />
+								)
+							}
+
+
 							<ArtistToolbar
 								buttonProps={[
 									{
@@ -175,8 +160,10 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 				return;
 			}
 
-			// TODO: Add support for choosing a subject
-			ioSocket.emit('newSubjectChosen', newSubjects[0]);
+			this.setState({
+				availableSubjectChoices: newSubjects,
+				openSubjectDialog: true
+			});
 		});
 
 		this.init();
@@ -196,6 +183,20 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		if (ioSocket) {
 			ioSocket.off('newSubjectChoices');
 		}
+	}
+
+	private onSubjectSelected = (newSubject: Subject) => {
+
+		if (!newSubject) {
+			return;
+		}
+
+		this.setState({
+			openSubjectDialog: false,
+			availableSubjectChoices: []
+		});
+
+		this.props.ioSocket.emit('newSubjectChosen', newSubject);
 	}
 
 	// ---- Canvas Utilities and Setup ---- //

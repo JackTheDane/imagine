@@ -1,1 +1,1 @@
-export const scaleFactor: number = 10000;
+export const scaleFactor: number = 1000000;

@@ -84,9 +84,7 @@ export class Player {
         return;
       }
 
-      const artistPlayer: Player = this.gameLobby.getOrSetArtistPlayer();
-
-      if (!subject || this.gameLobby.checkPlayerRole(PlayerRoles.Artist, this)) {
+      if (!subject || !this.gameLobby.checkPlayerRole(PlayerRoles.Artist, this)) {
         return;
       }
 

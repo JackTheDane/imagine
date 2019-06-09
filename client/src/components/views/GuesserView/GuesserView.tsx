@@ -316,6 +316,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		this.c = new fabric.StaticCanvas(this.canvasRef.current);
 
 		fabric.Object.prototype.lockUniScaling = true;
+		fabric.Object.prototype.lockScalingFlip = true;
 		fabric.Object.prototype.centeredRotation = true;
 		fabric.Object.prototype.centeredScaling = true;
 		fabric.Object.prototype.originX = 'center';

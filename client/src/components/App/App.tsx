@@ -109,7 +109,6 @@ export class App extends React.Component<AppProps, AppState> {
 				{content}
 				<Dialog
 					open={showNameDialog}
-					onClose={this.closeShowNameDialog}
 					aria-labelledby="form-dialog-title"
 				>
 					<DialogTitle id="form-dialog-title">Enter username</DialogTitle>
