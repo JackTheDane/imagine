@@ -717,8 +717,8 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						img.scaleToWidth(200);
 
 						if (!img.top || !img.left) {
-							img.top = img.getScaledHeight() / 2;
-							img.left = img.getScaledWidth() / 2;
+							img.top = this.c.getHeight() / 2;
+							img.left = img.getScaledWidth() / 2 + 10;
 						}
 
 						this.c.add(img);
