@@ -92,7 +92,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						boxSizing: 'border-box'
 					}}
 				>
-					<FigureDrawer mobileOpen={false} onAddImage={() => { }} />
+					<FigureDrawer mobileOpen={false} onAddImage={this.addNewImageToCanvas} />
 
 					<div className={s.artistCanvasWrapper}>
 
@@ -104,12 +104,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 							left: 10,
 							display: 'flex'
 						}}>
-							{/* <Fab color="primary" onClick={() => { console.log('Add image!'); }}>
-								<Icon>
-									add_to_photos
-								</Icon>
-							</Fab> */}
-
 							{
 								openSubjectDialog && availableSubjectChoices && availableSubjectChoices.length && (
 									<SubjectChoiceDialog onSelectedSubject={this.onSubjectSelected} availableSubjects={availableSubjectChoices} />
@@ -718,6 +712,13 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						if (img.minScaleLimit > 1) {
 							img.scaleX = img.minScaleLimit;
 							img.scaleY = img.minScaleLimit;
+						}
+
+						img.scaleToWidth(200);
+
+						if (!img.top || !img.left) {
+							img.top = img.getScaledHeight() / 2;
+							img.left = img.getScaledWidth() / 2;
 						}
 
 						this.c.add(img);

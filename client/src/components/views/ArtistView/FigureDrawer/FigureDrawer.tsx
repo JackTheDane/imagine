@@ -10,15 +10,33 @@ export interface FigureDrawerProps {
   onAddImage: (src: string) => void;
 }
 
-export function FigureDrawer({ mobileOpen, onAddImage }: FigureDrawerProps): JSX.Element {
+export function FigureDrawer({
+  mobileOpen,
+  onAddImage
+}: FigureDrawerProps): JSX.Element {
 
   const [filter, setFilter] = React.useState<string>('');
   const [figures, setFigures] = React.useState<IFigure[]>([...startFigures]);
 
   const onChangeSelection = (figure: IFigure) => {
-    setFigures(
-      figures.map((f: IFigure): IFigure => f === figure ? { ...f, selected: !f.selected } : f)
-    );
+
+    if (figure.selected && onAddImage) {
+      deselectAll();
+    } else {
+      setFigures(
+        figures.map((f: IFigure): IFigure => ({ ...f, selected: f === figure }))
+      );
+    }
+  }
+
+  /* <Fab color="primary" onClick={() => { console.log('Add image!'); }}>
+								<Icon>
+									add_to_photos
+								</Icon>
+							</Fab> */
+
+  const deselectAll = () => {
+    setFigures(figures.map((f: IFigure): IFigure => ({ ...f, selected: false })));
   }
 
   const onFilterChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement | HTMLSelectElement>) => {
@@ -30,7 +48,6 @@ export function FigureDrawer({ mobileOpen, onAddImage }: FigureDrawerProps): JSX
   }
 
   const checkForMatch = (aliases: string[]): boolean => aliases.some((alias: string): boolean => alias.indexOf(filter) === 0);
-
 
   return (
     <Drawer
@@ -51,9 +68,14 @@ export function FigureDrawer({ mobileOpen, onAddImage }: FigureDrawerProps): JSX
           {
             figures
               .map(
-                (figure: IFigure): JSX.Element | false => checkForMatch(figure.aliases) && (
-                  <Grid onClick={() => onChangeSelection(figure)} item xs={6}>
-                    <Figure src={figure.src} selected={figure.selected} />
+                (figure: IFigure, i: number): JSX.Element | false => checkForMatch(figure.aliases) && (
+                  <Grid key={`fig${i}`} onClick={() => onChangeSelection(figure)} item xs={6}>
+                    <Figure
+                      onAddImage={onAddImage}
+                      src={figure.src}
+                      selected={figure.selected}
+                      onDeselect={deselectAll}
+                    />
                   </Grid>
                 )
               )
