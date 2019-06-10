@@ -2,7 +2,7 @@
   "name": "imagine-testing-env",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://mbpmedia.com/imagine",
+  "homepage": "http://m-p.online",
   "dependencies": {
     "@material-ui/core": "^4.0.1",
     "@types/jest": "24.0.11",
