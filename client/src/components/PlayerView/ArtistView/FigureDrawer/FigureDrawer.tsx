@@ -1,22 +1,68 @@
 import * as React from 'react';
-import { Drawer, TextField, Grid } from '@material-ui/core';
+import { Drawer, TextField, Grid, Hidden, Tabs, Tab } from '@material-ui/core';
 import s from './FigureDrawer.module.scss';
 import { figures as startFigures } from '../../../../config/figures';
 import { IFigure } from '../../../../models/interfaces/IFigure';
 import { Figure } from './Figure/Figure';
+import SwipeableViews from 'react-swipeable-views';
 
 export interface FigureDrawerProps {
   mobileOpen: boolean;
+  onMobileClose: () => void;
   onAddImage: (src: string) => void;
 }
 
 export function FigureDrawer({
   mobileOpen,
-  onAddImage
+  onAddImage,
+  onMobileClose
 }: FigureDrawerProps): JSX.Element {
 
   const [filter, setFilter] = React.useState<string>('');
   const [figures, setFigures] = React.useState<IFigure[]>([...startFigures]);
+  const [tabIndex, setTabIndex] = React.useState<number>(0);
+
+  const [prevUsedFigures, setPrevUsedFigures] = React.useState<IFigure[]>([]);
+
+  // const drawerWidth: number = 240;
+
+  // const useStyles = makeStyles((theme: any) => ({
+  //   root: {
+  //     display: 'flex',
+  //   },
+  //   drawer: {
+  //     [theme.breakpoints.up('sm')]: {
+  //       width: drawerWidth,
+  //       flexShrink: 0,
+  //     },
+  //   },
+  //   appBar: {
+  //     marginLeft: drawerWidth,
+  //     [theme.breakpoints.up('sm')]: {
+  //       width: `calc(100% - ${drawerWidth}px)`,
+  //     },
+  //   },
+  //   menuButton: {
+  //     marginRight: theme.spacing(2),
+  //     [theme.breakpoints.up('sm')]: {
+  //       display: 'none',
+  //     },
+  //   },
+  //   toolbar: theme.mixins.toolbar,
+  //   drawerPaper: {
+  //     width: drawerWidth,
+  //   },
+  //   content: {
+  //     flexGrow: 1,
+  //     padding: theme.spacing(3),
+  //   },
+  // }));
+
+  const addNewPrevUsedFigure = (figure: IFigure) => setPrevUsedFigures([...prevUsedFigures.filter(f => f.src !== figure.src), { ...figure, selected: false }]);
+
+  const checkForMatch = (aliases: string[]): boolean => aliases.some((alias: string): boolean => alias.indexOf(filter) === 0);
+
+  // ---- Callbacks ---- //
 
   const onChangeSelection = (figure: IFigure) => {
 
@@ -28,12 +74,6 @@ export function FigureDrawer({
       );
     }
   }
-
-  /* <Fab color="primary" onClick={() => { console.log('Add image!'); }}>
-								<Icon>
-									add_to_photos
-								</Icon>
-							</Fab> */
 
   const deselectAll = () => {
     setFigures(figures.map((f: IFigure): IFigure => ({ ...f, selected: false })));
@@ -47,42 +87,94 @@ export function FigureDrawer({
     setFilter(e.target.value.toLowerCase());
   }
 
-  const checkForMatch = (aliases: string[]): boolean => aliases.some((alias: string): boolean => alias.indexOf(filter) === 0);
+  const onTabsChange = (e: any, newIndex: number) => {
+    setTabIndex(newIndex);
+  }
 
-  return (
-    <Drawer
-      variant="permanent"
-      className={s.permanentDrawer}
-      classes={{
-        paper: s.permanentDrawerPaper,
-      }}
-      open={true}
-    >
+  // ---- Content ---- //
 
+  const createFigureGrid = (figuresToUse: IFigure[]): JSX.Element => (
+    <div className={s.figureContainer}>
+      <Grid container className={s.gridRoot} spacing={3}>
+        {
+          figuresToUse
+            .map(
+              (figure: IFigure, i: number): JSX.Element | false => checkForMatch(figure.aliases) && (
+                <Grid key={`fig${i}`} onClick={() => onChangeSelection(figure)} item xs={6}>
+                  <Figure
+                    onAddImage={(src: string) => { addNewPrevUsedFigure(figure); onAddImage(src); }}
+                    src={figure.src}
+                    selected={figure.selected}
+                    onDeselect={deselectAll}
+                  />
+                </Grid>
+              )
+            )
+        }
+      </Grid>
+    </div>
+  )
+
+  const content: JSX.Element = (
+    <>
       <div style={{ padding: 20, boxSizing: 'border-box' }}>
         <TextField spellCheck={false} className={s.inputRoot} label="Search" onChange={onFilterChange} />
       </div>
 
-      <div className={s.figureContainer}>
-        <Grid container spacing={3}>
-          {
-            figures
-              .map(
-                (figure: IFigure, i: number): JSX.Element | false => checkForMatch(figure.aliases) && (
-                  <Grid key={`fig${i}`} onClick={() => onChangeSelection(figure)} item xs={6}>
-                    <Figure
-                      onAddImage={onAddImage}
-                      src={figure.src}
-                      selected={figure.selected}
-                      onDeselect={deselectAll}
-                    />
-                  </Grid>
-                )
-              )
-          }
-        </Grid>
-      </div>
+      <Tabs
+        value={tabIndex}
+        onChange={onTabsChange}
+        indicatorColor="primary"
+        textColor="primary"
+        variant="fullWidth"
+      >
+        <Tab label="All" />
+        <Tab label="Previous" />
+      </Tabs>
 
-    </Drawer>
+      <SwipeableViews
+        index={tabIndex}
+        onChangeIndex={setTabIndex}
+      >
+        {createFigureGrid(figures)}
+        {createFigureGrid(prevUsedFigures)}
+      </SwipeableViews>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop version */}
+      <Hidden smDown implementation="css">
+        <Drawer
+          variant="permanent"
+          className={s.permanentDrawer}
+          classes={{
+            paper: s.permanentDrawerPaper,
+          }}
+          open={true}
+        >
+          {content}
+        </Drawer>
+      </Hidden>
+
+      {/* Mobile version */}
+      <Hidden mdUp implementation="css">
+        <Drawer
+          variant="temporary"
+          className={s.permanentDrawer}
+          classes={{
+            paper: s.permanentDrawerPaper,
+          }}
+          open={mobileOpen}
+          onClose={onMobileClose}
+          ModalProps={{
+            keepMounted: true
+          }}
+        >
+          {content}
+        </Drawer>
+      </Hidden>
+    </>
   );
 }

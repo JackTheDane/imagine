@@ -20,6 +20,7 @@ import { Subject } from '../../../models/interfaces/Subject';
 import { ArtistToolbar } from './Toolbar/ArtistToolbar';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
 import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
+import { Hidden, Fab, Icon } from '@material-ui/core';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
@@ -34,6 +35,7 @@ export interface ArtistViewState {
 	itemsSelected: boolean;
 	availableSubjectChoices: Subject[];
 	openSubjectDialog: boolean;
+	openMobileFigureDrawer: boolean;
 }
 
 export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState> {
@@ -59,7 +61,8 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			historyIndex: 0,
 			itemsSelected: false,
 			openSubjectDialog: false,
-			availableSubjectChoices: []
+			availableSubjectChoices: [],
+			openMobileFigureDrawer: false
 		};
 	}
 
@@ -74,7 +77,8 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			historyIndex,
 			itemsSelected,
 			availableSubjectChoices,
-			openSubjectDialog
+			openSubjectDialog,
+			openMobileFigureDrawer
 		} = this.state;
 
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
@@ -83,8 +87,13 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		};
 
 		return (
-			<div>
+			<>
 
+				{
+					openSubjectDialog && availableSubjectChoices && availableSubjectChoices.length && (
+						<SubjectChoiceDialog onSelectedSubject={this.onSubjectSelected} availableSubjects={availableSubjectChoices} />
+					)
+				}
 				<div
 					style={{
 						display: 'flex',
@@ -92,7 +101,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						boxSizing: 'border-box'
 					}}
 				>
-					<FigureDrawer mobileOpen={false} onAddImage={this.addNewImageToCanvas} />
+					<FigureDrawer onMobileClose={() => this.onMobileFigureChange(false)} mobileOpen={openMobileFigureDrawer} onAddImage={(src: string) => { this.addNewImageToCanvas(src); if (openMobileFigureDrawer) { this.setState({ openMobileFigureDrawer: false }) } }} />
 
 					<div className={s.artistCanvasWrapper}>
 
@@ -104,12 +113,14 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 							left: 10,
 							display: 'flex'
 						}}>
-							{
-								openSubjectDialog && availableSubjectChoices && availableSubjectChoices.length && (
-									<SubjectChoiceDialog onSelectedSubject={this.onSubjectSelected} availableSubjects={availableSubjectChoices} />
-								)
-							}
 
+							<Hidden mdUp implementation="css">
+								<Fab color="primary" onClick={() => this.onMobileFigureChange(!openMobileFigureDrawer)}>
+									<Icon>
+										add_to_photos
+									</Icon>
+								</Fab>
+							</Hidden>
 
 							<ArtistToolbar
 								buttonProps={[
@@ -134,7 +145,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						</div>
 					</div>
 				</div>
-			</div>
+			</>
 		);
 	}
 
@@ -177,6 +188,13 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		if (ioSocket) {
 			ioSocket.off('newSubjectChoices');
 		}
+	}
+
+	// ---- Callbacks ---- //
+	private onMobileFigureChange = (newValue: boolean) => {
+		this.setState({
+			openMobileFigureDrawer: newValue
+		});
 	}
 
 	private onSubjectSelected = (newSubject: Subject) => {
@@ -718,7 +736,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 						if (!img.top || !img.left) {
 							img.top = this.c.getHeight() / 2;
-							img.left = img.getScaledWidth() / 2 + 10;
+							img.left = this.c.getWidth() / 2;
 						}
 
 						this.c.add(img);

@@ -1,17 +1,16 @@
 import React from 'react';
 // import s from './App.module.scss';
-import { ArtistView } from './PlayerView/ArtistView/ArtistView';
-import { GuesserView } from './PlayerView/GuesserView/GuesserView';
 import io from 'socket.io-client';
 import { PlayerRoles } from '../models/enums/PlayerRoles';
 import { Player } from '../models/interfaces/Player';
 import { getCanvasHeightFromWidth } from '../utils/getCanvasHeightFromWidth';
 import { getCanvasWidthFromHeight } from '../utils/getCanvasWidthFromHeight';
-import { ISharedViewProps } from '../models/interfaces/ISharedViewProps';
 import { AutoSnackbar } from './AutoSnackbar/AutoSnackbar';
 import { IMessage } from '../models/interfaces/IMessage';
 import { PlayerDrawer } from './PlayerDrawer/PlayerDrawer';
 import { CreateAvatarDialog } from './CreateAvatarDialog/CreateAvatarDialog';
+import { PlayerView } from './PlayerView/PlayerView';
+import { webSocketPort } from '../config/webSocketPort';
 
 export interface AppState {
 	currentPlayer: Player | undefined;
@@ -24,7 +23,7 @@ export interface AppState {
 
 export class App extends React.Component<{}, AppState> {
 
-	private socket: SocketIOClient.Socket = io('192.168.0.6:3001');
+	private socket: SocketIOClient.Socket = io(webSocketPort);
 
 	constructor(props: {}) {
 		super(props);
@@ -42,51 +41,77 @@ export class App extends React.Component<{}, AppState> {
 
 		const {
 			currentPlayer,
-			canvasWidth,
 			showNameDialog,
 			userGuesses,
 			players
 		} = this.state;
 
-		const commonViewProps: ISharedViewProps = {
-			ioSocket: this.socket,
-			canvasWidth: canvasWidth
-		}
-
-		const content: any = (currentPlayer && currentPlayer != null && canvasWidth > 0)
-			&& (
-				<div style={{ display: 'flex' }} >
-					<div style={{ flexGrow: 1 }}>
-						{
-							currentPlayer.role === PlayerRoles.Guesser
-								? <GuesserView onGuess={this.onGuesserGuess} {...commonViewProps} />
-								: <ArtistView {...commonViewProps} />
-						}
-					</div>
-					<PlayerDrawer players={players} userGuesses={userGuesses} />
-				</div>
-			);
-
 		return (
 			<>
-				{content}
+				{currentPlayer != null && (
+					<>
+						<div style={{ display: 'flex' }} >
+							<div style={{ flexGrow: 1 }}>
+								<PlayerView ioSocket={this.socket} onGuesserGuess={this.onGuesserGuess} playerRole={currentPlayer.role} />
+							</div>
+							<PlayerDrawer players={players} userGuesses={userGuesses} />
+						</div>
+						<AutoSnackbar open={true} message={`Welcome ${currentPlayer.name}!`} />
+					</>
+				)}
 				<CreateAvatarDialog shouldOpen={showNameDialog} onPlayerNameSubmit={this.submitName} />
-				{currentPlayer && <AutoSnackbar open={true} message={`Welcome ${currentPlayer.name}!`} />}
 			</>
 		);
 	}
 
 	public componentDidMount(): void {
-		this.setWindowSize();
-
 		this.socket.on('connect', () => {
 			this.addSocketEventListeners();
 		});
 	}
 
+	// ---- Game Interactions ---- //
+
+	private addGuessToList = (player: Player, guess: string) => {
+		this.setState(
+			({ userGuesses }) => ({
+				userGuesses: [...userGuesses, { player, text: guess }]
+			})
+		);
+	}
+
+	private onGuesserGuess = (guess: string) => {
+		if (this.state.currentPlayer) {
+			this.addGuessToList(this.state.currentPlayer, guess);
+		}
+	}
+
+	private submitName = (name: string) => {
+		if (!name) return;
+
+		this.setState({
+			playerName: name
+		}, this.connectToLobby)
+	}
+
+	// ---- Socket.IO interactions ---- //
+
 	private connectToLobby = () => {
+
+		let lobbyName: string = 'General';
+
+		try {
+			const URLLobbyName: string | null = new URL(window.location.href).searchParams.get('lobby');
+
+			if (URLLobbyName) {
+				lobbyName = URLLobbyName;
+			}
+		} catch (error) {
+			console.log('Could not set lobby name', error);
+		}
+
 		this.socket.emit('joinLobby',
-			'TestLobbyName',
+			lobbyName,
 			this.state.playerName,
 			(playerInfo: Player, otherPlayers: Player[]) => {
 
@@ -223,45 +248,23 @@ export class App extends React.Component<{}, AppState> {
 		});
 	}
 
-	private setWindowSize = () => {
-		// Get the window dimensions (Max width 1200)
-		const wWidth: number = window.innerWidth < 1200 ? window.innerWidth : 1200;
-		const wHeight: number = window.innerHeight;
+	// private setWindowSize = () => {
+	// 	// Get the window dimensions (Max width 1200)
+	// 	const wWidth: number = window.innerWidth < 1200 ? window.innerWidth : 1200;
+	// 	const wHeight: number = window.innerHeight;
 
-		// Get the scaled wHeight
-		const canvasHeightFromWidth: number = getCanvasHeightFromWidth(wWidth);
+	// 	// Get the scaled wHeight
+	// 	const canvasHeightFromWidth: number = getCanvasHeightFromWidth(wWidth);
 
-		// Set the state
-		this.setState({
-			// If the scaled canvas height is bigger than the window
-			canvasWidth: canvasHeightFromWidth > wHeight
-				// get width from height
-				? getCanvasWidthFromHeight(wHeight)
-				// Else, use wWidth
-				: wWidth
-		});
-	}
-
-	private addGuessToList = (player: Player, guess: string) => {
-		this.setState(
-			({ userGuesses }) => ({
-				userGuesses: [...userGuesses, { player, text: guess }]
-			})
-		);
-	}
-
-	private onGuesserGuess = (guess: string) => {
-		if (this.state.currentPlayer) {
-			this.addGuessToList(this.state.currentPlayer, guess);
-		}
-	}
-
-	private submitName = (name: string) => {
-		if (!name) return;
-
-		this.setState({
-			playerName: name
-		}, this.connectToLobby)
-	}
+	// 	// Set the state
+	// 	this.setState({
+	// 		// If the scaled canvas height is bigger than the window
+	// 		canvasWidth: canvasHeightFromWidth > wHeight
+	// 			// get width from height
+	// 			? getCanvasWidthFromHeight(wHeight)
+	// 			// Else, use wWidth
+	// 			: wWidth
+	// 	});
+	// }
 }
 
