@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { Drawer, TextField, Grid, Hidden, Tabs, Tab } from '@material-ui/core';
+import { Drawer, TextField, Hidden, Tabs, Tab } from '@material-ui/core';
 import s from './FigureDrawer.module.scss';
 import { figures as startFigures } from '../../../../config/figures';
 import { IFigure } from '../../../../models/interfaces/IFigure';
-import { Figure } from './Figure/Figure';
 import SwipeableViews from 'react-swipeable-views';
+import { FigureGrid } from './FigureGrid/FigureGrid';
 
 export interface FigureDrawerProps {
   mobileOpen: boolean;
@@ -58,26 +58,21 @@ export function FigureDrawer({
   //   },
   // }));
 
-  const addNewPrevUsedFigure = (figure: IFigure) => setPrevUsedFigures([...prevUsedFigures.filter(f => f.src !== figure.src), { ...figure, selected: false }]);
+  const addNewFigure = (figure: IFigure) => {
+    setPrevUsedFigures([...prevUsedFigures.filter(f => f.src !== figure.src), { ...figure }]);
+
+    addFigure(figure);
+  }
+
+  const addFigure = (figure: IFigure) => {
+    if (!figure) return;
+
+    onAddImage(figure.src);
+  }
 
   const checkForMatch = (aliases: string[]): boolean => aliases.some((alias: string): boolean => alias.indexOf(filter) === 0);
 
   // ---- Callbacks ---- //
-
-  const onChangeSelection = (figure: IFigure) => {
-
-    if (figure.selected && onAddImage) {
-      deselectAll();
-    } else {
-      setFigures(
-        figures.map((f: IFigure): IFigure => ({ ...f, selected: f === figure }))
-      );
-    }
-  }
-
-  const deselectAll = () => {
-    setFigures(figures.map((f: IFigure): IFigure => ({ ...f, selected: false })));
-  }
 
   const onFilterChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement | HTMLSelectElement>) => {
     if (!e || !e.target) {
@@ -92,28 +87,6 @@ export function FigureDrawer({
   }
 
   // ---- Content ---- //
-
-  const createFigureGrid = (figuresToUse: IFigure[]): JSX.Element => (
-    <div className={s.figureContainer}>
-      <Grid container className={s.gridRoot} spacing={3}>
-        {
-          figuresToUse
-            .map(
-              (figure: IFigure, i: number): JSX.Element | false => checkForMatch(figure.aliases) && (
-                <Grid key={`fig${i}`} onClick={() => onChangeSelection(figure)} item xs={6}>
-                  <Figure
-                    onAddImage={(src: string) => { addNewPrevUsedFigure(figure); onAddImage(src); }}
-                    src={figure.src}
-                    selected={figure.selected}
-                    onDeselect={deselectAll}
-                  />
-                </Grid>
-              )
-            )
-        }
-      </Grid>
-    </div>
-  )
 
   const content: JSX.Element = (
     <>
@@ -136,8 +109,8 @@ export function FigureDrawer({
         index={tabIndex}
         onChangeIndex={setTabIndex}
       >
-        {createFigureGrid(figures)}
-        {createFigureGrid(prevUsedFigures)}
+        <FigureGrid figures={figures.filter(f => checkForMatch(f.aliases))} onAddFigure={addNewFigure} />
+        <FigureGrid figures={prevUsedFigures.filter(f => checkForMatch(f.aliases))} onAddFigure={addFigure} />
       </SwipeableViews>
     </>
   );
