@@ -60,7 +60,7 @@ export function FigureDrawer({
     >
 
       <div style={{ padding: 20, boxSizing: 'border-box' }}>
-        <TextField className={s.inputRoot} label="Search" onChange={onFilterChange} />
+        <TextField spellCheck={false} className={s.inputRoot} label="Search" onChange={onFilterChange} />
       </div>
 
       <div className={s.figureContainer}>
