@@ -5,6 +5,7 @@ import { figures as startFigures } from '../../../../config/figures';
 import { IFigure } from '../../../../models/interfaces/IFigure';
 import SwipeableViews from 'react-swipeable-views';
 import { FigureGrid } from './FigureGrid/FigureGrid';
+import { imgFolder } from '../../../../config/imgFolder';
 
 export interface FigureDrawerProps {
   mobileOpen: boolean;
@@ -67,7 +68,9 @@ export function FigureDrawer({
   const addFigure = (figure: IFigure) => {
     if (!figure) return;
 
-    onAddImage(figure.src);
+    console.log(figure);
+
+    onAddImage(`${imgFolder}/${figure.src}`);
   }
 
   const checkForMatch = (aliases: string[]): boolean => aliases.some((alias: string): boolean => alias.indexOf(filter) === 0);
@@ -83,6 +86,10 @@ export function FigureDrawer({
   }
 
   const onTabsChange = (e: any, newIndex: number) => {
+    setTabIndex(newIndex);
+  }
+
+  const swipeableTabChange = (newIndex: number): void => {
     setTabIndex(newIndex);
   }
 
@@ -107,7 +114,7 @@ export function FigureDrawer({
 
       <SwipeableViews
         index={tabIndex}
-        onChangeIndex={setTabIndex}
+        onChangeIndex={swipeableTabChange}
       >
         <FigureGrid figures={figures.filter(f => checkForMatch(f.aliases))} onAddFigure={addNewFigure} />
         <FigureGrid figures={prevUsedFigures.filter(f => checkForMatch(f.aliases))} onAddFigure={addFigure} />

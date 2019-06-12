@@ -15,15 +15,16 @@ export function FigureGrid({
   onAddFigure
 }: FigureGridProps): JSX.Element {
 
-  const [selectedFigure, setSelectedFigure] = React.useState<IFigure | null>(null);
+  const [selectedFigure, setSelectedFigure] = React.useState<IFigure | false>(false);
 
   const deselectFigure = () => {
     console.log('Woop');
-    setSelectedFigure(null);
+    setSelectedFigure(figures[0]); // This does not set selectedFigure. Why not?
   }
 
   return (
     <div className={s.figureContainer}>
+      {/* {JSON.stringify(selectedFigure)} */}
       <Grid container className={s.gridRoot} spacing={3}>
         {
           figures
