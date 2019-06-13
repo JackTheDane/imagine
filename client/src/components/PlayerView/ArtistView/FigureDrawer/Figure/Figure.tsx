@@ -26,25 +26,14 @@ export function Figure({
   return (
     <Paper className={containerClass}>
       <img className={s.img} alt="" src={`${imgFolder}/${src}`} />
-      <Fade
+      {/* <Fade
         timeout={200}
         in={selected}
-      >
-        <div className={s.optionButtonWrapper}>
-          <Zoom
-            timeout={200}
-            in={selected}
-          >
-            <Button className={s.optionButton} color="primary" variant="contained" onClick={imgCallBack}> Add </Button>
-          </Zoom>
-          <Zoom
-            timeout={200}
-            in={selected}
-          >
-            <Button className={s.optionButton} onClick={deselect}> Deselect </Button>
-          </Zoom>
-        </div>
-      </Fade>
+        >
+        </Fade> */}
+      <div className={s.optionButtonWrapper}>
+        <Button className={s.optionButton} color="primary" variant="contained" onClick={imgCallBack}> Add </Button>
+      </div>
 
     </Paper>
   );

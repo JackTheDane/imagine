@@ -18,37 +18,35 @@ export function ArtistToolbar({
   return (
     <div style={{ display: 'flex' }}>
 
-      <div style={{ marginLeft: 10 }}>
-        {buttonProps.map(({
-          iconName,
-          isDisabled,
-          onClick,
-          shouldHide,
-          color
-        }, i: number) => (
-            <Zoom
-              timeout={50}
-              in={!shouldHide}
-              key={`abtn${i}`}
+      {buttonProps.map(({
+        iconName,
+        isDisabled,
+        onClick,
+        shouldHide,
+        color
+      }, i: number) => (
+          <Zoom
+            timeout={50}
+            in={!shouldHide}
+            key={`abtn${i}`}
+          >
+            <IconButton
+              color="default"
+              disabled={isDisabled}
+              onClick={onClick}
+              aria-label={iconName}
             >
-              <IconButton
-                color="default"
-                disabled={isDisabled}
-                onClick={onClick}
-                aria-label={iconName}
+              <Icon
+                style={{
+                  color: color ? color : 'inherit'
+                }}
+                fontSize="small"
               >
-                <Icon
-                  style={{
-                    color: color ? color : 'inherit'
-                  }}
-                  fontSize="small"
-                >
-                  {iconName}
-                </Icon>
-              </IconButton>
-            </Zoom>
-          ))}
-      </div>
+                {iconName}
+              </Icon>
+            </IconButton>
+          </Zoom>
+        ))}
 
     </div>
   );

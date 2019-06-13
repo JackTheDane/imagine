@@ -54,7 +54,7 @@ export class App extends React.Component<{}, AppState> {
 							<div style={{ flexGrow: 1 }}>
 								<PlayerView ioSocket={this.socket} onGuesserGuess={this.onGuesserGuess} playerRole={currentPlayer.role} />
 							</div>
-							<PlayerDrawer players={players} userGuesses={userGuesses} />
+							<PlayerDrawer currentPlayer={currentPlayer} players={players} userGuesses={userGuesses} />
 						</div>
 						<AutoSnackbar open={true} message={`Welcome ${currentPlayer.name}!`} />
 					</>
@@ -132,7 +132,8 @@ export class App extends React.Component<{}, AppState> {
 	private addSocketEventListeners = () => {
 		this.socket.on('winnerOfRound', ({ guid, score }: { guid: string; score: number; }) => {
 			const {
-				currentPlayer
+				currentPlayer,
+				players
 			} = this.state;
 
 			// Check if is current player
@@ -142,10 +143,22 @@ export class App extends React.Component<{}, AppState> {
 					currentPlayer: {
 						...currentPlayer,
 						score
-					}
+					},
+					players: players.map(p => {
+
+						const returnPlayer: Player = { ...p };
+
+						if (returnPlayer.role === PlayerRoles.Artist) {
+							returnPlayer.score++;
+						}
+
+						return returnPlayer;
+					})
 				});
 				return;
 			}
+
+			let artistPlayerFound: boolean = false;
 
 			// Else, player is not current player
 			this.setState(
@@ -154,12 +167,23 @@ export class App extends React.Component<{}, AppState> {
 						if (p.guid === guid) {
 							p.score = score;
 							console.log(p.name, 'has scored! : ', p.score);
+						} else if (p.role === PlayerRoles.Artist) {
+							// Increment the score if the player was the Artist
+							p.score++;
+							artistPlayerFound = true;
 						}
 
 						return p;
 					})
 				})
 			)
+
+			// If the Artist was not found, then the current player is Artist. Therefore, increment player score
+			if (currentPlayer && !artistPlayerFound) {
+				this.setState({
+					currentPlayer: { ...currentPlayer, score: currentPlayer.score + 1 }
+				});
+			}
 		});
 
 		// Add new player to array

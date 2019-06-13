@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { Drawer, TextField, Hidden, Tabs, Tab } from '@material-ui/core';
+import { Drawer, TextField, Hidden, Tabs, Tab, Icon, InputAdornment, IconButton } from '@material-ui/core';
 import s from './FigureDrawer.module.scss';
 import { figures as startFigures } from '../../../../config/figures';
 import { IFigure } from '../../../../models/interfaces/IFigure';
-import SwipeableViews from 'react-swipeable-views';
 import { FigureGrid } from './FigureGrid/FigureGrid';
 import { imgFolder } from '../../../../config/imgFolder';
+import { TextFieldProps } from '@material-ui/core/TextField';
 
 export interface FigureDrawerProps {
   mobileOpen: boolean;
@@ -89,36 +89,75 @@ export function FigureDrawer({
     setTabIndex(newIndex);
   }
 
-  const swipeableTabChange = (newIndex: number): void => {
-    setTabIndex(newIndex);
+  // ---- Content ---- //
+  let figuresToUse: IFigure[];
+  let addImageCallback: (figure: IFigure) => void;
+
+  switch (tabIndex) {
+    case 1: {
+      figuresToUse = prevUsedFigures;
+      addImageCallback = addFigure;
+    }
+      break;
+
+    // Default case, main "All tab"
+    default: {
+      figuresToUse = figures;
+      addImageCallback = addNewFigure;
+    }
+      break;
   }
 
-  // ---- Content ---- //
+  const textFieldProps: TextFieldProps = {
+    className: s.inputRoot,
+    label: 'Search',
+    onChange: onFilterChange,
+    value: filter
+  }
+
+  if (filter) {
+    textFieldProps.InputProps = {
+      endAdornment: (
+        <InputAdornment position="end">
+          <IconButton
+            color="default"
+            onClick={() => setFilter('')} >
+            <Icon> clear </Icon>
+          </IconButton>
+        </InputAdornment>
+      )
+    }
+  }
 
   const content: JSX.Element = (
     <>
-      <div style={{ padding: 20, boxSizing: 'border-box' }}>
-        <TextField spellCheck={false} className={s.inputRoot} label="Search" onChange={onFilterChange} />
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%'
+      }}>
+        <div style={{ padding: 20, boxSizing: 'border-box' }}>
+          <TextField
+            {...textFieldProps}
+          />
+        </div>
+
+        <Tabs
+          value={tabIndex}
+          onChange={onTabsChange}
+          indicatorColor="primary"
+          textColor="primary"
+          variant="fullWidth"
+        >
+          <Tab label="All" />
+          <Tab icon={<Icon>history</Icon>} />
+        </Tabs>
+
+
+        <div style={{ backgroundColor: '#F5F5F5', flexGrow: 1, overflowY: 'auto' }}>
+          <FigureGrid figures={figuresToUse.filter(f => checkForMatch(f.aliases))} onAddFigure={addImageCallback} />
+        </div>
       </div>
-
-      <Tabs
-        value={tabIndex}
-        onChange={onTabsChange}
-        indicatorColor="primary"
-        textColor="primary"
-        variant="fullWidth"
-      >
-        <Tab label="All" />
-        <Tab label="Previous" />
-      </Tabs>
-
-      <SwipeableViews
-        index={tabIndex}
-        onChangeIndex={swipeableTabChange}
-      >
-        <FigureGrid figures={figures.filter(f => checkForMatch(f.aliases))} onAddFigure={addNewFigure} />
-        <FigureGrid figures={prevUsedFigures.filter(f => checkForMatch(f.aliases))} onAddFigure={addFigure} />
-      </SwipeableViews>
     </>
   );
 

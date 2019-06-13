@@ -1,0 +1,47 @@
+.container {
+  height: 100vh;
+  display: flex;
+  align-items: flex-end;
+}
+
+
+.playerCoinContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.playerCoin {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.permanentDrawer {
+
+  .drawerPlayerCoins {
+    display: flex;
+    padding: 16px;
+
+    background-color: #F5F5F5;
+  }
+
+
+  .permanentDrawerPaper {
+    display: flex;
+    flex-direction: column;
+
+    height: 100vh;
+    width: 400px;
+    max-width: 80vw;
+    overflow: hidden;
+  }
+}
+
+.drawerPlayerCoin + .drawerPlayerCoin {
+  margin-left: 16px;
+}

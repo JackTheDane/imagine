@@ -1,0 +1,33 @@
+.root {
+
+  padding: 6px 10px;
+  background-color: rgb(120, 120, 120);
+  color: white;
+  border-radius: 4px;
+
+  white-space: nowrap;
+
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  position: absolute;
+
+  top: 50%;
+  left: -5px;
+
+  animation: floatInAndAway 2s ease 2 alternate both;
+
+  @keyframes floatInAndAway {
+    0% {
+      transform: translate( calc(-100% + 20px), -50% );
+      opacity: 0;
+    }
+
+    20%,
+    100% {
+      transform: translate( -100%, -50% );
+      opacity: 1;
+    }
+  }
+}

@@ -1,14 +1,3 @@
-.container {
-  height: 200px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-  position: relative;
-
-  animation: figureFadeIn .3s both;
-}
-
 .optionButtonWrapper {
   position: absolute;
   height: 100%;
@@ -18,22 +7,36 @@
   left: 0;
   right: 0;
 
-  display: flex;
+  display: none;
   flex-direction: column;
-  // justify-content: center;
+  justify-content: center;
   align-items: center;
 
-  background-color: rgba($color: #fff, $alpha: 0.5);
+  background-color: rgba($color: #fff, $alpha: 0.6);
 
   .optionButton {
     width: 70%;
     margin-top: 5px;
+  }
+}
 
-    &:first-child {
-      margin-top: calc(50% + 10px);
-      transform: translateY(-50%);
+.container {
+  height: 180px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  position: relative;
+
+  animation: figureFadeIn .3s both;
+
+  &:hover,
+  &:active {
+    .optionButtonWrapper {
+      display: flex;
     }
   }
+
 }
 
 .img {
