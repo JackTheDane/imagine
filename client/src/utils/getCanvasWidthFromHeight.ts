@@ -1,1 +1,1 @@
-export const getCanvasWidthFromHeight = (height: number): number => height * (3 / 4);
+export const getCanvasWidthFromHeight = (height: number): number => height * (4 / 3);

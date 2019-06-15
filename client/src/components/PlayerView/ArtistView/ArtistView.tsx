@@ -113,7 +113,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 							/>
 						</div>
 
-
 						<div style={{
 							position: 'absolute',
 							top: 10,
@@ -180,7 +179,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		});
 
 		this.setScaledCanvasWidth();
-
 		window.addEventListener('resize', this.setScaledCanvasWidth);
 
 		this.init();
@@ -199,8 +197,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		if (
 			prevState.canvasWidth !== this.state.canvasWidth
 		) {
-
-			console.log('Rescale');
 
 			// If so, get the new scale
 			const newScale: number = this.state.canvasWidth / prevState.canvasWidth;
@@ -350,7 +346,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 				// If any new events occurred, return the events.
 				if ((event.cEvents || event.oEvents)) {
-					console.log(event);
 					this.sendCanvasChange(event);
 				}
 

@@ -13,6 +13,8 @@ import { getCanvasHeightFromWidth } from '../../../utils/getCanvasHeightFromWidt
 import { refreshInterval } from '../../../config/refreshInterval';
 import { scaleFactor } from '../../../config/scaleFactor';
 import { SubjectPlacerholder } from '../../../models/interfaces/SubjectPlaceholder';
+import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
+import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 
 export interface GuesserViewProps extends ISharedViewProps {
 	onGuess: (guess: string) => void;
@@ -28,8 +30,9 @@ export interface GuesserViewState {
 
 export class GuesserView extends React.Component<GuesserViewProps, GuesserViewState> {
 	private canvasRef = createRef<HTMLCanvasElement>();
-	private c: fabric.StaticCanvas | undefined;
 	private inputRef = createRef<HTMLInputElement>();
+	private canvasWrapperRef = createRef<HTMLDivElement>();
+	private c: fabric.StaticCanvas | undefined;
 	private _isMounted: boolean;
 
 	constructor(props: GuesserViewProps) {
@@ -42,7 +45,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			numberOfPlaceholderFields: 0,
 			guessText: '',
 			lastGuessIncorrect: false,
-			canvasWidth: 600
+			canvasWidth: 0
 		}
 	}
 
@@ -59,29 +62,35 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		};
 
 		return (
-			<div>
+			<div
+				style={{
+					display: 'flex',
+					justifyContent: 'space-between',
+					width: '100%',
+					height: '100%',
+					boxSizing: 'border-box',
+					alignItems: 'flex-end'
+				}}
+			>
 				<div
-					style={{
-						display: 'flex',
-						justifyContent: 'space-between',
-						width: '100%',
-						boxSizing: 'border-box',
-						alignItems: 'flex-end'
-					}}
+					className={s.viewWrapper}
+					ref={this.canvasWrapperRef}
 				>
-					<div className={s.wrapper}>
-						<div style={{ display: 'flex' }}>
-							<h3>Guesser</h3>
-							<input
-								className={s.guessInput}
-								ref={this.inputRef}
-								onChange={this.onInputChange}
-								value={guessText}
-							/>
-							{this.getPlaceholderUI()}
-						</div>
+
+					<div className={s.canvasWrapper}>
 						<canvas {...canvasProps} className={s.canvas} ref={this.canvasRef} />
 					</div>
+
+					<div style={{ display: 'flex' }}>
+						<input
+							className={s.guessInput}
+							ref={this.inputRef}
+							onChange={this.onInputChange}
+							value={guessText}
+						/>
+						{this.getPlaceholderUI()}
+					</div>
+
 				</div>
 			</div>
 		);
@@ -90,6 +99,10 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 	// ---- Life Cycles Methods ---- //
 
 	public componentDidMount(): void {
+
+		this.setScaledCanvasWidth();
+		window.addEventListener('resize', this.setScaledCanvasWidth);
+
 		this.init();
 
 		const {
@@ -139,6 +152,28 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		});
 	}
 
+	public componentDidUpdate(prevProps: GuesserViewProps, prevState: GuesserViewState): void {
+
+		if (!this.state.canvasWidth || !this.c) return;
+
+		if (!prevState.canvasWidth) {
+			this.setInitialCanvasSize();
+			return;
+		}
+
+		// Check if the canvasWidth has changed
+		if (
+			prevState.canvasWidth !== this.state.canvasWidth
+		) {
+
+			// If so, get the new scale
+			const newScale: number = this.state.canvasWidth / prevState.canvasWidth;
+
+			// Rescale all fabric objects to the new scale
+			rescaleAllFabricObjects(this.c, newScale);
+		}
+	}
+
 	public componentWillUnmount(): void {
 		if (this.c) {
 			this.c.dispose();
@@ -154,6 +189,8 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			ioSocket.off('newSubject');
 			ioSocket.off('cEvent');
 		}
+
+		window.removeEventListener('resize', this.setScaledCanvasWidth);
 	}
 
 	// ---- UI ---- //
@@ -298,6 +335,38 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			this.setState({
 				lastGuessIncorrect: !answerWasCorrect
 			});
+		});
+	}
+
+	// ---- Callbacks ---- //
+
+	private setInitialCanvasSize = () => {
+
+		if (!this.c || !this.state.canvasWidth) return;
+
+		this.c.setWidth(this.state.canvasWidth);
+		this.c.setHeight(getCanvasHeightFromWidth(this.state.canvasWidth));
+		this.c.renderAll();
+	}
+
+	private setScaledCanvasWidth = () => {
+		if (!this.canvasWrapperRef || !this.canvasWrapperRef.current) return;
+
+		const {
+			clientWidth,
+			clientHeight
+		} = this.canvasWrapperRef.current;
+
+		// Get the scaled wHeight
+		const canvasHeightFromWidth: number = getCanvasHeightFromWidth(clientWidth);
+
+		// Set the state
+		this.setState({
+			canvasWidth: canvasHeightFromWidth > clientHeight
+				// get width from height
+				? getCanvasWidthFromHeight(clientHeight)
+				// Else, use clientWidth
+				: clientWidth
 		});
 	}
 
