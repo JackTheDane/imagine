@@ -1,7 +1,5 @@
 .container {
-  height: 100vh;
   display: flex;
-  align-items: flex-end;
   position: absolute;
   top: 0;
   right: 0;
@@ -14,14 +12,21 @@
   align-items: flex-end;
   padding: 20px;
   box-sizing: border-box;
-  height: 100%;
+  cursor: pointer;
+
+  &:hover {
+    opacity: .75;
+  }
 }
 
 .playerCoin {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 15px;
   position: relative;
+
+  & + & {
+    margin-top: 15px;
+  }
 }
 
 .permanentDrawer {

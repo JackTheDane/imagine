@@ -15,6 +15,8 @@ import { scaleFactor } from '../../../config/scaleFactor';
 import { SubjectPlacerholder } from '../../../models/interfaces/SubjectPlaceholder';
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
+import { ScreenKeyboard } from './ScreenKeyboard/ScreenKeyboard';
+import { Grid, Icon, Button } from '@material-ui/core';
 
 export interface GuesserViewProps extends ISharedViewProps {
 	onGuess: (guess: string) => void;
@@ -30,7 +32,6 @@ export interface GuesserViewState {
 
 export class GuesserView extends React.Component<GuesserViewProps, GuesserViewState> {
 	private canvasRef = createRef<HTMLCanvasElement>();
-	private inputRef = createRef<HTMLInputElement>();
 	private canvasWrapperRef = createRef<HTMLDivElement>();
 	private c: fabric.StaticCanvas | undefined;
 	private _isMounted: boolean;
@@ -62,37 +63,36 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		};
 
 		return (
-			<div
-				style={{
-					display: 'flex',
-					justifyContent: 'space-between',
-					width: '100%',
-					height: '100%',
-					boxSizing: 'border-box',
-					alignItems: 'flex-end'
-				}}
-			>
-				<div
-					className={s.viewWrapper}
-					ref={this.canvasWrapperRef}
-				>
 
-					<div className={s.canvasWrapper}>
-						<canvas {...canvasProps} className={s.canvas} ref={this.canvasRef} />
+			<Grid classes={{ container: s.gridContainer }} container spacing={3}>
+
+				<Grid item xs={6} sm={8}>
+					<div
+						className={s.viewWrapper}
+						ref={this.canvasWrapperRef}
+					>
+
+						<div className={s.canvasWrapper}>
+							<canvas {...canvasProps} className={s.canvas} ref={this.canvasRef} />
+						</div>
+
 					</div>
+				</Grid>
 
-					<div style={{ display: 'flex' }}>
-						<input
-							className={s.guessInput}
-							ref={this.inputRef}
-							onChange={this.onInputChange}
-							value={guessText}
+				<Grid item xs={6} sm={4}>
+					<div className={s.placeholderKeyboardWrapper}>
+						<div>
+							{this.getPlaceholderUI()}
+						</div>
+						<ScreenKeyboard
+							onKeyClick={this.addLetterToGuess}
+							onDeleteClick={this.deleteLetterFromGuess}
 						/>
-						{this.getPlaceholderUI()}
 					</div>
+				</Grid>
 
-				</div>
-			</div>
+			</Grid>
+
 		);
 	}
 
@@ -120,7 +120,6 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 				(accumulator, currentValue) => accumulator + currentValue
 			);
 
-			console.log(placeholder);
 			this.setState({
 				placeholder,
 				numberOfPlaceholderFields,
@@ -195,34 +194,38 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 	// ---- UI ---- //
 
-	private onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	private addLetterToGuess = (letter: string) => {
+
+		if (!letter || !this.state.placeholder) return;
 
 		const {
-			placeholder,
-			numberOfPlaceholderFields
+			guessText,
+			placeholder
 		} = this.state;
 
+		const numberOfPlaceholderLetters: number = placeholder.placeholder.reduce(
+			(accumulator: number, currVal: number) => accumulator + currVal
+		);
+
+		if (numberOfPlaceholderLetters < guessText.length) return;
+
+		this.setState(
+			({ guessText }) => ({
+				guessText: guessText + letter
+			})
+		);
+	}
+
+	private deleteLetterFromGuess = () => {
+
+		const {
+			guessText
+		} = this.state;
+
+		if (!guessText) return;
+
 		this.setState({
-			lastGuessIncorrect: false
-		});
-
-		const newText: string = e.target.value.replace(/\s/g, '');
-
-		if (
-			!placeholder
-			|| !placeholder.placeholder
-			|| !numberOfPlaceholderFields
-		) {
-			return;
-		}
-
-		// If the text is longer than the number of placeholder fields, return
-		if (numberOfPlaceholderFields < newText.length) {
-			return;
-		}
-
-		this.setState({
-			guessText: newText
+			guessText: guessText.slice(0, -1)
 		});
 	}
 
@@ -241,21 +244,20 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		return placeholder && (
 			<div
 				className={s.placeholderWrapper}
-				style={{ display: 'flex' }}
-				onClick={() => {
-					if (this.inputRef && this.inputRef.current) {
-						this.inputRef.current.focus();
-					}
-				}}
+				style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
 			>
-				<span>
-					<i className="material-icons"> {placeholder.topic.iconName} </i>
+				<div
+					style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: '1.7em' }}
+				>
+					<Icon style={{ marginBottom: 5, fontSize: '1.3em' }}>
+						{placeholder.topic.iconName}
+					</Icon>
 					{placeholder.topic.name}
-				</span>
-				<div style={{ display: 'flex' }}>
+				</div>
+				<div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
 					{placeholder.placeholder.map(
 						(numberOfLetters: number, j: number): JSX.Element => (
-							<div key={`ph${j}`} style={{ display: 'flex', marginRight: 15 }}>
+							<div key={`ph${j}`} style={{ display: 'flex', marginRight: 15, marginBottom: 10 }}>
 								{
 									Array.apply(null, Array(numberOfLetters)).map(
 										(undef: any, i: number): JSX.Element => {
@@ -284,13 +286,18 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 							</div>
 						)
 					)}
+					<Button
+						variant="contained"
+						size="small"
+						color="primary"
+						onClick={this.onGuessSubmission}
+						disabled={guessText.length < numberOfPlaceholderFields}
+					>
+						<Icon>
+							send
+						</Icon>
+					</Button>
 				</div>
-				<button
-					onClick={this.onGuessSubmission}
-					disabled={guessText.length < numberOfPlaceholderFields}
-				>
-					Submit
-				</button>
 			</div>
 		);
 	}

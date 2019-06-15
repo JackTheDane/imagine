@@ -1,3 +1,17 @@
+.gridContainer {
+  height: 100%;
+}
+
+.placeholderKeyboardWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 360px;
+  margin: auto;
+}
+
 .canvas {
   border: 1px solid;
 }
@@ -11,6 +25,7 @@
   flex-grow: 1;
   padding: 10px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .canvasWrapper {
@@ -35,26 +50,7 @@
   display: flex;
   cursor: text;
 
-  opacity: .5;
   transition: opacity .1s;
-}
-
-.guessInput {
-  // Chrome on mobile flips this if set to 0?
-  width: 0.1px;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  opacity: 0;
-
-  &:focus + .placeholderWrapper {
-
-    opacity: 1;
-
-    .activePlaceholderField {
-      animation: activePulse .6s linear both alternate infinite;
-    }
-  }
 }
 
 @keyframes activePulse {
