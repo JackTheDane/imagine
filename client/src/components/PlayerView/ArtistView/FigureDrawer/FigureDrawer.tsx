@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Drawer, TextField, Hidden, Tabs, Tab, Icon, InputAdornment, IconButton } from '@material-ui/core';
 import s from './FigureDrawer.module.scss';
-import { figures as startFigures } from '../../../../config/figures';
+import { figures } from '../../../../config/figures';
 import { IFigure } from '../../../../models/interfaces/IFigure';
 import { FigureGrid } from './FigureGrid/FigureGrid';
 import { imgFolder } from '../../../../config/imgFolder';
@@ -20,44 +20,9 @@ export function FigureDrawer({
 }: FigureDrawerProps): JSX.Element {
 
   const [filter, setFilter] = React.useState<string>('');
-  const [figures, setFigures] = React.useState<IFigure[]>([...startFigures]);
   const [tabIndex, setTabIndex] = React.useState<number>(0);
 
   const [prevUsedFigures, setPrevUsedFigures] = React.useState<IFigure[]>([]);
-
-  // const drawerWidth: number = 240;
-
-  // const useStyles = makeStyles((theme: any) => ({
-  //   root: {
-  //     display: 'flex',
-  //   },
-  //   drawer: {
-  //     [theme.breakpoints.up('sm')]: {
-  //       width: drawerWidth,
-  //       flexShrink: 0,
-  //     },
-  //   },
-  //   appBar: {
-  //     marginLeft: drawerWidth,
-  //     [theme.breakpoints.up('sm')]: {
-  //       width: `calc(100% - ${drawerWidth}px)`,
-  //     },
-  //   },
-  //   menuButton: {
-  //     marginRight: theme.spacing(2),
-  //     [theme.breakpoints.up('sm')]: {
-  //       display: 'none',
-  //     },
-  //   },
-  //   toolbar: theme.mixins.toolbar,
-  //   drawerPaper: {
-  //     width: drawerWidth,
-  //   },
-  //   content: {
-  //     flexGrow: 1,
-  //     padding: theme.spacing(3),
-  //   },
-  // }));
 
   const addNewFigure = (figure: IFigure) => {
     setPrevUsedFigures([...prevUsedFigures.filter(f => f.src !== figure.src), { ...figure }]);
@@ -90,20 +55,21 @@ export function FigureDrawer({
   }
 
   // ---- Content ---- //
-  let figuresToUse: IFigure[];
-  let addImageCallback: (figure: IFigure) => void;
+  // let figuresToUse: IFigure[];
+  // let addImageCallback: (figure: IFigure) => void;
+
+  let tabContent: JSX.Element;
 
   switch (tabIndex) {
+    // Previously used
     case 1: {
-      figuresToUse = prevUsedFigures;
-      addImageCallback = addFigure;
+      tabContent = <FigureGrid figures={prevUsedFigures.filter(f => checkForMatch(f.aliases))} onAddFigure={addFigure} />
     }
       break;
 
     // Default case, main "All tab"
     default: {
-      figuresToUse = figures;
-      addImageCallback = addNewFigure;
+      tabContent = <FigureGrid figures={figures.filter(f => checkForMatch(f.aliases))} onAddFigure={addNewFigure} />
     }
       break;
   }
@@ -136,12 +102,6 @@ export function FigureDrawer({
         flexDirection: 'column',
         height: '100%'
       }}>
-        <div style={{ padding: 20, boxSizing: 'border-box' }}>
-          <TextField
-            {...textFieldProps}
-          />
-        </div>
-
         <Tabs
           value={tabIndex}
           onChange={onTabsChange}
@@ -155,7 +115,12 @@ export function FigureDrawer({
 
 
         <div style={{ backgroundColor: '#F5F5F5', flexGrow: 1, overflowY: 'auto' }}>
-          <FigureGrid figures={figuresToUse.filter(f => checkForMatch(f.aliases))} onAddFigure={addImageCallback} />
+          <div style={{ padding: '10px 20px', boxSizing: 'border-box' }}>
+            <TextField
+              {...textFieldProps}
+            />
+          </div>
+          {tabContent}
         </div>
       </div>
     </>

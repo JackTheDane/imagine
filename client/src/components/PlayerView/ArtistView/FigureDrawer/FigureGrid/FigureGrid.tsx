@@ -17,14 +17,8 @@ export function FigureGrid({
 
   const [selectedFigure, setSelectedFigure] = React.useState<IFigure | false>(false);
 
-  const deselectFigure = () => {
-    console.log('Woop');
-    setSelectedFigure(figures[0]); // This does not set selectedFigure. Why not?
-  }
-
   return (
     <div className={s.figureContainer}>
-      {/* {JSON.stringify(selectedFigure)} */}
       <Grid container className={s.gridRoot} spacing={3}>
         {
           figures
@@ -33,9 +27,8 @@ export function FigureGrid({
                 <Grid key={`fig${i}`} onClick={() => setSelectedFigure(figure)} item xs={6}>
                   <Figure
                     onAddImage={() => onAddFigure(figure)}
-                    src={figure.src}
+                    figure={figure}
                     selected={figure === selectedFigure}
-                    onDeselect={deselectFigure}
                   />
                 </Grid>
               )

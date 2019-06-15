@@ -8,7 +8,7 @@
 .playerCoinContainer {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   padding: 20px;
   box-sizing: border-box;
   height: 100%;
@@ -26,6 +26,7 @@
   .drawerPlayerCoins {
     display: flex;
     padding: 16px;
+    align-items: flex-end;
 
     background-color: #F5F5F5;
   }

@@ -7,7 +7,7 @@
   left: 0;
   right: 0;
 
-  display: none;
+  display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -30,13 +30,15 @@
 
   animation: figureFadeIn .3s both;
 
-  &:hover,
-  &:active {
-    .optionButtonWrapper {
-      display: flex;
+  @keyframes figureFadeIn {
+    0% {
+      opacity: 0;
+    }
+
+    100% {
+      opacity: 1;
     }
   }
-
 }
 
 .img {
@@ -46,12 +48,3 @@
   user-select: none;
 }
 
-@keyframes figureFadeIn {
-  0% {
-    opacity: 0;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
