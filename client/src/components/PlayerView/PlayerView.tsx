@@ -19,8 +19,7 @@ export function PlayerView({
 
 
   const commonViewProps: ISharedViewProps = {
-    ioSocket,
-    canvasWidth: 600
+    ioSocket
   }
 
   return playerRole === PlayerRoles.Guesser

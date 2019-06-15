@@ -50,7 +50,7 @@ export class App extends React.Component<{}, AppState> {
 			<>
 				{currentPlayer != null && (
 					<>
-						<div style={{ display: 'flex' }} >
+						<div style={{ display: 'flex', height: '100vh' }} >
 							<div style={{ flexGrow: 1 }}>
 								<PlayerView ioSocket={this.socket} onGuesserGuess={this.onGuesserGuess} playerRole={currentPlayer.role} />
 							</div>

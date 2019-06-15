@@ -7,6 +7,9 @@ export const rescaleAllFabricObjects = (
 ): void => {
   if (!canvas || !newScale) return;
 
+  canvas.setWidth(canvas.getWidth() * newScale);
+  canvas.setHeight(canvas.getHeight() * newScale);
+
   const objects: fabric.Object[] = canvas.getObjects();
 
   for (let i = 0; i < objects.length; i++) {
@@ -19,6 +22,15 @@ export const rescaleAllFabricObjects = (
         : 1;
 
     object.scale(scale * newScale);
+
+    if (object.top) {
+      object.top = object.top * newScale;
+    }
+
+    if (object.left) {
+      object.left = object.left * newScale;
+    }
+
   }
 
   canvas.renderAll();

@@ -23,6 +23,7 @@ export interface GuesserViewState {
 	numberOfPlaceholderFields: number;
 	guessText: string;
 	lastGuessIncorrect: boolean;
+	canvasWidth: number;
 }
 
 export class GuesserView extends React.Component<GuesserViewProps, GuesserViewState> {
@@ -40,17 +41,15 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			placeholder: undefined,
 			numberOfPlaceholderFields: 0,
 			guessText: '',
-			lastGuessIncorrect: false
+			lastGuessIncorrect: false,
+			canvasWidth: 600
 		}
 	}
 
 	public render() {
 
 		const {
-			canvasWidth
-		} = this.props;
-
-		const {
+			canvasWidth,
 			guessText
 		} = this.state;
 
@@ -492,6 +491,6 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 	}
 
 	// ---- Utilities ---- //
-	private getValueFromHeightScale = (value: number): number => value * getCanvasHeightFromWidth(this.props.canvasWidth);
-	private getValueFromWidthScale = (value: number): number => value * this.props.canvasWidth;
+	private getValueFromHeightScale = (value: number): number => value * getCanvasHeightFromWidth(this.state.canvasWidth || 1);
+	private getValueFromWidthScale = (value: number): number => value * (this.state.canvasWidth || 1);
 }

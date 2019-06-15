@@ -21,6 +21,8 @@ import { ArtistToolbar } from './Toolbar/ArtistToolbar';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
 import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
 import { Hidden, Fab, Icon } from '@material-ui/core';
+import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
+import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
@@ -36,10 +38,12 @@ export interface ArtistViewState {
 	availableSubjectChoices: Subject[];
 	openSubjectDialog: boolean;
 	openMobileFigureDrawer: boolean;
+	canvasWidth: number;
 }
 
 export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState> {
 	private artistRef = createRef<HTMLCanvasElement>();
+	private canvasWrapperRef = createRef<HTMLDivElement>();
 	private _isMounted: boolean;
 
 	private c: fabric.Canvas | undefined;
@@ -62,15 +66,12 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			itemsSelected: false,
 			openSubjectDialog: false,
 			availableSubjectChoices: [],
-			openMobileFigureDrawer: false
+			openMobileFigureDrawer: false,
+			canvasWidth: 0
 		};
 	}
 
 	public render() {
-
-		const {
-			canvasWidth
-		} = this.props;
 
 		const {
 			snapshotHistory,
@@ -80,11 +81,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			openSubjectDialog,
 			openMobileFigureDrawer
 		} = this.state;
-
-		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
-			width: canvasWidth,
-			height: getCanvasHeightFromWidth(canvasWidth)
-		};
 
 		return (
 			<>
@@ -98,17 +94,23 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 					style={{
 						display: 'flex',
 						width: '100%',
+						height: '100%',
 						boxSizing: 'border-box'
 					}}
 				>
-					<FigureDrawer onMobileClose={() => this.onMobileFigureChange(false)} mobileOpen={openMobileFigureDrawer} onAddImage={(src: string) => { this.addNewImageToCanvas(src); if (openMobileFigureDrawer) { this.setState({ openMobileFigureDrawer: false }) } }} />
+					<div>
+						<FigureDrawer onMobileClose={() => this.onMobileFigureChange(false)} mobileOpen={openMobileFigureDrawer} onAddImage={(src: string) => { this.addNewImageToCanvas(src); if (openMobileFigureDrawer) { this.setState({ openMobileFigureDrawer: false }) } }} />
+					</div>
 
-					<div className={s.artistCanvasWrapper}>
-
-						<div style={{
-							margin: 'auto'
-						}}>
-							<canvas {...canvasProps} className={s.artistCanvas} ref={this.artistRef} />
+					<div
+						className={s.artistViewWrapper}
+						ref={this.canvasWrapperRef}
+					>
+						<div className={s.artistCanvasWrapper}>
+							<canvas
+								className={s.artistCanvas}
+								ref={this.artistRef}
+							/>
 						</div>
 
 
@@ -154,6 +156,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		);
 	}
 
+
 	// ---- Life Cycles Methods ---- //
 
 	public componentDidMount(): void {
@@ -176,7 +179,35 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			});
 		});
 
+		this.setScaledCanvasWidth();
+
+		window.addEventListener('resize', this.setScaledCanvasWidth);
+
 		this.init();
+	}
+
+	public componentDidUpdate(prevProps: ArtistViewProps, prevState: ArtistViewState): void {
+
+		if (!this.state.canvasWidth || !this.c) return;
+
+		if (!prevState.canvasWidth) {
+			this.setInitialCanvasSize();
+			return;
+		}
+
+		// Check if the canvasWidth has changed
+		if (
+			prevState.canvasWidth !== this.state.canvasWidth
+		) {
+
+			console.log('Rescale');
+
+			// If so, get the new scale
+			const newScale: number = this.state.canvasWidth / prevState.canvasWidth;
+
+			// Rescale all fabric objects to the new scale
+			rescaleAllFabricObjects(this.c, newScale);
+		}
 	}
 
 	public componentWillUnmount(): void {
@@ -193,13 +224,46 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		if (ioSocket) {
 			ioSocket.off('newSubjectChoices');
 		}
+
+		window.removeEventListener('resize', this.setScaledCanvasWidth);
 	}
 
 	// ---- Callbacks ---- //
+
+	private setScaledCanvasWidth = () => {
+		if (!this.canvasWrapperRef || !this.canvasWrapperRef.current) return;
+
+		const {
+			clientWidth,
+			clientHeight
+		} = this.canvasWrapperRef.current;
+
+		// Get the scaled wHeight
+		const canvasHeightFromWidth: number = getCanvasHeightFromWidth(clientWidth);
+
+		// Set the state
+		this.setState({
+			canvasWidth: canvasHeightFromWidth > clientHeight
+				// get width from height
+				? getCanvasWidthFromHeight(clientHeight)
+				// Else, use clientWidth
+				: clientWidth
+		});
+	}
+
 	private onMobileFigureChange = (newValue: boolean) => {
 		this.setState({
 			openMobileFigureDrawer: newValue
 		});
+	}
+
+	private setInitialCanvasSize = () => {
+
+		if (!this.c || !this.state.canvasWidth) return;
+
+		this.c.setWidth(this.state.canvasWidth);
+		this.c.setHeight(getCanvasHeightFromWidth(this.state.canvasWidth));
+		this.c.renderAll();
 	}
 
 	private onSubjectSelected = (newSubject: Subject) => {
@@ -232,10 +296,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			centeredRotation: true,
 			centeredScaling: true,
 			stopContextMenu: true
-			// // Grabbing cursor?
-			// hoverCursor: 'grab',
-			// moveCursor: 'grabbing',
-			// rotationCursor: '' Rotation cursor
 		});
 
 		// Set Object settings
@@ -510,8 +570,8 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 	// -- Canvas Utility -- //
 
-	private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.props.canvasWidth);
-	private getValueToWidthScale = (value: number): number => value / this.props.canvasWidth;
+	private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.state.canvasWidth || 1);
+	private getValueToWidthScale = (value: number): number => value / (this.state.canvasWidth || 1);
 	private getScaledScale = (scaleValue: number): number => Math.round(this.getValueToWidthScale(scaleValue) * scaleFactor);
 
 	private addToSnapshotToHistory = (snapshot: IObjectSnapshot = this.objectsSnapshot) => {
