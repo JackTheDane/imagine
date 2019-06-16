@@ -785,7 +785,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						const smallestAxis: number = (img.width as number) >= (img.height as number) ? (img.width as number) : (img.height as number);
 
 						// This ensures that an image cannot scale to be smaller than 80px on its smallest scale (Height or width)
-						img.minScaleLimit = 130 / smallestAxis;
+						img.minScaleLimit = 120 / smallestAxis;
 
 						if (img.minScaleLimit > 1) {
 							img.scaleX = img.minScaleLimit;

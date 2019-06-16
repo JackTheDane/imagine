@@ -38,7 +38,7 @@ export function SubjectChoiceDialog({
                     alignItems="center"
                   >
                     <ListItemAvatar>
-                      <Icon>
+                      <Icon fontSize="large">
                         {subject.topic.iconName}
                       </Icon>
                     </ListItemAvatar>

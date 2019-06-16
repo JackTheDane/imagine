@@ -54,7 +54,8 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 		const {
 			canvasWidth,
-			guessText
+			guessText,
+			numberOfPlaceholderFields
 		} = this.state;
 
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
@@ -87,6 +88,8 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 						<ScreenKeyboard
 							onKeyClick={this.addLetterToGuess}
 							onDeleteClick={this.deleteLetterFromGuess}
+							onSubmit={this.onGuessSubmission}
+							disableSubmit={guessText.length < numberOfPlaceholderFields}
 						/>
 					</div>
 				</Grid>
@@ -257,7 +260,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 				<div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
 					{placeholder.placeholder.map(
 						(numberOfLetters: number, j: number): JSX.Element => (
-							<div key={`ph${j}`} style={{ display: 'flex', marginRight: 15, marginBottom: 10 }}>
+							<div key={`ph${j}`} style={{ display: 'flex', marginBottom: 10 }}>
 								{
 									Array.apply(null, Array(numberOfLetters)).map(
 										(undef: any, i: number): JSX.Element => {
@@ -286,17 +289,6 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 							</div>
 						)
 					)}
-					<Button
-						variant="contained"
-						size="small"
-						color="primary"
-						onClick={this.onGuessSubmission}
-						disabled={guessText.length < numberOfPlaceholderFields}
-					>
-						<Icon>
-							send
-						</Icon>
-					</Button>
 				</div>
 			</div>
 		);

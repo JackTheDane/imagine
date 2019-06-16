@@ -29,7 +29,7 @@ export const subjects: Subject[] = [
     topic: topics.fictionalCharacter
   },
   {
-    text: 'The Hulk',
+    text: 'Hulk',
     topic: topics.fictionalCharacter
   },
   // Books
@@ -38,7 +38,7 @@ export const subjects: Subject[] = [
     topic: topics.book
   },
   {
-    text: '1984',
+    text: 'Bible',
     topic: topics.book
   },
   // Events
