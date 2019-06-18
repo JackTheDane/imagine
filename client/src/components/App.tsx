@@ -60,8 +60,6 @@ export class App extends React.Component<{}, AppState> {
 
 		const artistChoosing: boolean = artistIsChoosing && artistPlayer !== currentPlayer;
 
-		console.log(artistChoosing);
-
 		return (
 			<>
 				<div style={{ display: 'flex', height: '100vh' }} >
@@ -82,7 +80,7 @@ export class App extends React.Component<{}, AppState> {
 					iconName="👋"
 				/>
 				<AutoSnackbar
-					open={playerWonMessage != ''}
+					open={playerWonMessage !== ''}
 					message={playerWonMessage}
 					variant="success"
 					iconName="🎉"

@@ -16,7 +16,9 @@ import { SubjectPlacerholder } from '../../../models/interfaces/SubjectPlacehold
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 import { ScreenKeyboard } from './ScreenKeyboard/ScreenKeyboard';
-import { Grid, Icon } from '@material-ui/core';
+import { Icon } from '@material-ui/core';
+import { red } from '@material-ui/core/colors';
+import { AutoSnackbar } from '../../AutoSnackbar/AutoSnackbar';
 
 export interface GuesserViewProps extends ISharedViewProps {
 	onGuess: (guess: string) => void;
@@ -29,6 +31,7 @@ export interface GuesserViewState {
 	guessText: string;
 	lastGuessIncorrect: boolean;
 	canvasWidth: number;
+	lastErrorTimestamp: string;
 }
 
 export class GuesserView extends React.Component<GuesserViewProps, GuesserViewState> {
@@ -47,7 +50,8 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			numberOfPlaceholderFields: 0,
 			guessText: '',
 			lastGuessIncorrect: false,
-			canvasWidth: 0
+			canvasWidth: 0,
+			lastErrorTimestamp: ''
 		}
 	}
 
@@ -56,7 +60,8 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		const {
 			canvasWidth,
 			guessText,
-			numberOfPlaceholderFields
+			numberOfPlaceholderFields,
+			lastErrorTimestamp
 		} = this.state;
 
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
@@ -64,15 +69,11 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			height: canvasWidth * (0.75)
 		};
 
-		if (!this.props.roundIsActive) {
-			return <div></div>;
-		}
-
 		return (
 
-			<Grid classes={{ container: s.gridContainer }} container spacing={3}>
+			<>
+				<div style={{ visibility: this.props.roundIsActive ? 'visible' : 'hidden' }} className={s.gridContainer}>
 
-				<Grid item xs={6} sm={8}>
 					<div
 						className={s.viewWrapper}
 						ref={this.canvasWrapperRef}
@@ -83,9 +84,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 						</div>
 
 					</div>
-				</Grid>
 
-				<Grid item xs={6} sm={4}>
 					<div className={s.placeholderKeyboardWrapper}>
 						<div>
 							{this.getPlaceholderUI()}
@@ -97,9 +96,11 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 							disableSubmit={guessText.length < numberOfPlaceholderFields}
 						/>
 					</div>
-				</Grid>
 
-			</Grid>
+				</div>
+
+				<AutoSnackbar open={lastErrorTimestamp !== ''} key={lastErrorTimestamp} message="Wrong guess, try again!" />
+			</>
 
 		);
 	}
@@ -108,9 +109,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 	public componentDidMount(): void {
 
-		this.setScaledCanvasWidth();
-		window.addEventListener('resize', this.setScaledCanvasWidth);
-
+		// Start Fabric.js
 		this.init();
 
 		const {
@@ -157,6 +156,11 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 				console.log('Error parsing event, ', error);
 			}
 		});
+
+		// Set window event listeners
+		this.setScaledCanvasWidth();
+		window.addEventListener('resize', this.setScaledCanvasWidth);
+		window.addEventListener('keydown', this.onKeyPress);
 	}
 
 	public componentDidUpdate(prevProps: GuesserViewProps, prevState: GuesserViewState): void {
@@ -198,6 +202,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		}
 
 		window.removeEventListener('resize', this.setScaledCanvasWidth);
+		window.removeEventListener('keydown', this.onKeyPress);
 	}
 
 	// ---- UI ---- //
@@ -211,7 +216,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			numberOfPlaceholderFields
 		} = this.state;
 
-		if (numberOfPlaceholderFields < guessText.length) return;
+		if (numberOfPlaceholderFields <= guessText.length) return;
 
 		this.setState(
 			({ guessText }) => ({
@@ -229,8 +234,42 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		if (!guessText) return;
 
 		this.setState({
-			guessText: guessText.slice(0, -1)
+			guessText: guessText.slice(0, -1),
+			lastGuessIncorrect: false
 		});
+	}
+
+	private onKeyPress = (e: KeyboardEvent) => {
+
+		// Check for modifiers, and return if so
+		if (
+			e.shiftKey
+			|| e.ctrlKey
+			|| e.altKey
+		) {
+			return;
+		}
+
+		switch (e.keyCode) {
+			case 46: // Delete key
+			case 8: // Backspace
+				this.deleteLetterFromGuess();
+				return;
+
+			case 32: // Space
+				return;
+
+			case 13: // Enter key
+				this.onGuessSubmission(); // Submit guess
+				return;
+
+			default:
+
+				if (e.key.length === 1 && e.key.match(/[a-zA-Z]/)) { // Only add key, if key length is 1
+					this.addLetterToGuess(e.key.trim())
+				}
+				return;
+		}
 	}
 
 	private getPlaceholderUI = (): JSX.Element | undefined => {
@@ -256,38 +295,40 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 					</Icon>
 					{placeholder.topic.name}
 				</div>
-				<div className={s.placeholderWrapper}>
-					{placeholder.placeholder.map(
-						(numberOfLetters: number, j: number): JSX.Element => (
-							<div key={`ph${j}`}>
-								{
-									Array.apply(null, Array(numberOfLetters)).map(
-										(undef: any, i: number): JSX.Element => {
-											overAllIndex++;
-											return (
-												<div
-													key={`phl${i}`}
-													style={{
-														backgroundColor: lastGuessIncorrect ? 'red' : 'white'
-													}}
-													className={`
+				<div style={{ display: 'flex', alignItems: 'center' }}>
+					<div className={s.placeholderWrapper}>
+						{placeholder.placeholder.map(
+							(numberOfLetters: number, j: number): JSX.Element => (
+								<div key={`ph${j}`}>
+									{
+										Array.apply(null, Array(numberOfLetters)).map(
+											(undef: any, i: number): JSX.Element => {
+												overAllIndex++;
+												return (
+													<div
+														key={`phl${i}`}
+														style={{
+															borderBottomColor: lastGuessIncorrect ? red[600] : undefined
+														}}
+														className={`
 													${s.textPlaceholderElem}
 													${guessTextArray.length > 0
-															? s.filledPlaceholder
-															: overAllIndex === guessTextLength
-																? s.activePlaceholderField
-																: ''
-														}`}
-												>
-													{guessTextArray.length > 0 && guessTextArray.shift()}
-												</div>
-											)
-										}
-									)
-								}
-							</div>
-						)
-					)}
+																? s.filledPlaceholder
+																: overAllIndex === guessTextLength
+																	? s.activePlaceholderField
+																	: ''
+															}`}
+													>
+														{guessTextArray.length > 0 && guessTextArray.shift()}
+													</div>
+												)
+											}
+										)
+									}
+								</div>
+							)
+						)}
+					</div>
 				</div>
 			</div>
 		);
@@ -301,7 +342,8 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 		const {
 			guessText,
-			placeholder
+			placeholder,
+			numberOfPlaceholderFields
 		} = this.state;
 
 		if (
@@ -309,6 +351,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			|| !guessText
 			|| !placeholder
 			|| !placeholder.placeholder
+			|| guessText.length !== numberOfPlaceholderFields
 		) {
 			return;
 		}
@@ -330,6 +373,13 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 		// Emit the guess text
 		ioSocket.emit('guess', guessTextWithSpaces, (answerWasCorrect: boolean) => {
+
+			if (answerWasCorrect) {
+				this.setState({
+					lastErrorTimestamp: Date.now() + ''
+				});
+			}
+
 			this.setState({
 				lastGuessIncorrect: !answerWasCorrect
 			});
