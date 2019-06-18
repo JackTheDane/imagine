@@ -3,22 +3,23 @@ import React from 'react';
 import io from 'socket.io-client';
 import { PlayerRoles } from '../models/enums/PlayerRoles';
 import { Player } from '../models/interfaces/Player';
-import { getCanvasHeightFromWidth } from '../utils/getCanvasHeightFromWidth';
-import { getCanvasWidthFromHeight } from '../utils/getCanvasWidthFromHeight';
 import { AutoSnackbar } from './AutoSnackbar/AutoSnackbar';
 import { IMessage } from '../models/interfaces/IMessage';
 import { PlayerDrawer } from './PlayerDrawer/PlayerDrawer';
 import { CreateAvatarDialog } from './CreateAvatarDialog/CreateAvatarDialog';
 import { PlayerView } from './PlayerView/PlayerView';
 import { webSocketPort } from '../config/webSocketPort';
+import { MessageTypes } from '../models/enums/MessageTypes';
+import { Dialog, DialogTitle, DialogContent, DialogContentText } from '@material-ui/core';
 
 export interface AppState {
 	currentPlayer: Player | undefined;
-	canvasWidth: number;
 	players: Player[];
 	showNameDialog: boolean;
 	playerName: string;
 	userGuesses: IMessage[];
+	playerWonMessage: string | JSX.Element;
+	artistIsChoosing: boolean;
 }
 
 export class App extends React.Component<{}, AppState> {
@@ -29,11 +30,12 @@ export class App extends React.Component<{}, AppState> {
 		super(props);
 		this.state = {
 			currentPlayer: undefined,
-			canvasWidth: 0,
 			players: [],
 			showNameDialog: true,
 			playerName: '',
-			userGuesses: []
+			userGuesses: [],
+			playerWonMessage: '',
+			artistIsChoosing: true
 		};
 	}
 
@@ -43,23 +45,65 @@ export class App extends React.Component<{}, AppState> {
 			currentPlayer,
 			showNameDialog,
 			userGuesses,
-			players
+			players,
+			playerWonMessage,
+			artistIsChoosing
 		} = this.state;
+
+		if (!currentPlayer) {
+			return <CreateAvatarDialog shouldOpen={showNameDialog} onPlayerNameSubmit={this.submitName} />;
+		}
+
+		const artistPlayer: Player | undefined = currentPlayer.role === PlayerRoles.Artist
+			? currentPlayer
+			: players.find(p => p.role === PlayerRoles.Artist)
+
+		const artistChoosing: boolean = artistIsChoosing && artistPlayer !== currentPlayer;
+
+		console.log(artistChoosing);
 
 		return (
 			<>
-				{currentPlayer != null && (
-					<>
-						<div style={{ display: 'flex', height: '100vh' }} >
-							<div style={{ flexGrow: 1 }}>
-								<PlayerView ioSocket={this.socket} onGuesserGuess={this.onGuesserGuess} playerRole={currentPlayer.role} />
-							</div>
-							<PlayerDrawer currentPlayer={currentPlayer} players={players} userGuesses={userGuesses} />
-						</div>
-						<AutoSnackbar open={true} message={`Welcome ${currentPlayer.name}!`} />
-					</>
-				)}
-				<CreateAvatarDialog shouldOpen={showNameDialog} onPlayerNameSubmit={this.submitName} />
+				<div style={{ display: 'flex', height: '100vh' }} >
+					<div style={{ flexGrow: 1 }}>
+						<PlayerView
+							roundIsActive={!artistChoosing}
+							ioSocket={this.socket}
+							onGuesserGuess={this.onGuesserGuess}
+							playerRole={currentPlayer.role}
+						/>
+					</div>
+					<PlayerDrawer currentPlayer={currentPlayer} players={players} userGuesses={userGuesses} />
+				</div>
+
+				<AutoSnackbar
+					open={true}
+					message={`Welcome ${currentPlayer.name}!`}
+					iconName="👋"
+				/>
+				<AutoSnackbar
+					open={playerWonMessage != ''}
+					message={playerWonMessage}
+					variant="success"
+					iconName="🎉"
+				/>{artistPlayer && artistPlayer.name}
+
+				<Dialog open={artistChoosing}>
+					<DialogTitle>
+						{
+							artistPlayer
+								? `${artistPlayer.name}'s turn`
+								: 'New turn'
+						}
+					</DialogTitle>
+					<DialogContent>
+						<DialogContentText>
+							A new subject is being chosen.
+						</DialogContentText>
+					</DialogContent>
+				</Dialog>
+
+				{artistChoosing && <h1>Not yet</h1>}
 			</>
 		);
 	}
@@ -72,10 +116,35 @@ export class App extends React.Component<{}, AppState> {
 
 	// ---- Game Interactions ---- //
 
-	private addGuessToList = (player: Player, guess: string) => {
+	private addGuessToList = (
+		player: string | Player,
+		guess: string,
+		type?: MessageTypes
+	) => {
+
+		// Check if the passed "player" param is a string, indicating a GUID
+		const playerObject: Player | undefined = typeof player === 'string'
+			? this.state.players.find((p): boolean => p.guid === player)
+			: player;
+
+		if (!playerObject) {
+			console.log('Could not register guess: ', player, guess);
+			return;
+		}
+
+		const newGuess: IMessage = {
+			player: playerObject,
+			text: guess
+		}
+
+		// add type if one was found
+		if (type != null) {
+			newGuess.type = type;
+		}
+
 		this.setState(
 			({ userGuesses }) => ({
-				userGuesses: [...userGuesses, { player, text: guess }]
+				userGuesses: [...userGuesses, newGuess]
 			})
 		);
 	}
@@ -130,14 +199,23 @@ export class App extends React.Component<{}, AppState> {
 	}
 
 	private addSocketEventListeners = () => {
-		this.socket.on('winnerOfRound', ({ guid, score }: { guid: string; score: number; }) => {
+
+		this.socket.on('newSubject', () => {
+			this.setState({
+				artistIsChoosing: false
+			});
+		});
+
+		this.socket.on('winnerOfRound', ({ guid, score, guess }: { guid: string; guess: string; score: number; }) => {
 			const {
 				currentPlayer,
 				players
 			} = this.state;
 
+			const isCurrentPlayer: boolean = currentPlayer != null && currentPlayer.guid === guid;
+
 			// Check if is current player
-			if (currentPlayer && currentPlayer.guid === guid) {
+			if (currentPlayer && isCurrentPlayer) {
 				// Set the new score
 				this.setState({
 					currentPlayer: {
@@ -153,12 +231,17 @@ export class App extends React.Component<{}, AppState> {
 						}
 
 						return returnPlayer;
-					})
+					}),
+					playerWonMessage: 'You won this round!'
 				});
+
 				return;
 			}
 
+			// The current player was not the winner of the round
+
 			let artistPlayerFound: boolean = false;
+			let playerName: string = 'A player';
 
 			// Else, player is not current player
 			this.setState(
@@ -166,7 +249,9 @@ export class App extends React.Component<{}, AppState> {
 					players: players.map((p: Player): Player => {
 						if (p.guid === guid) {
 							p.score = score;
-							console.log(p.name, 'has scored! : ', p.score);
+
+							playerName = p.name;
+
 						} else if (p.role === PlayerRoles.Artist) {
 							// Increment the score if the player was the Artist
 							p.score++;
@@ -174,7 +259,15 @@ export class App extends React.Component<{}, AppState> {
 						}
 
 						return p;
-					})
+					}),
+					playerWonMessage: <div style={{ textAlign: 'center' }}>
+						<div>
+							{playerName} has won the round!
+						</div>
+						<div>
+							Subject was: <b style={{ textTransform: 'capitalize' }} > {guess} </b>
+						</div>
+					</div>
 				})
 			)
 
@@ -198,14 +291,7 @@ export class App extends React.Component<{}, AppState> {
 
 		this.socket.on('otherPlayerGuess', ({ playerGuid, guess }: { playerGuid: string; guess: string; }) => {
 
-			const player: Player | undefined = this.state.players.find((p): boolean => p.guid === playerGuid);
-
-			if (!player) {
-				console.log('Player not found');
-				return;
-			}
-
-			this.addGuessToList(player, guess);
+			this.addGuessToList(playerGuid, guess);
 		});
 
 		this.socket.on('newArtist', (newArtistGuid: string) => {
@@ -217,24 +303,24 @@ export class App extends React.Component<{}, AppState> {
 				return;
 			}
 
-			// If the current player was the Artist, set to be Guesser
-			if (currentPlayer.role === PlayerRoles.Artist) {
-				console.log('Was artist');
-				this.setState({
-					currentPlayer: {
-						...currentPlayer,
-						role: PlayerRoles.Guesser
-					}
-				}
-				);
-			} else if (currentPlayer.guid === newArtistGuid) {
-				console.log('Is new artist');
+			const isArtist: boolean = currentPlayer.guid === newArtistGuid;
+
+			if (isArtist) {
 				this.setState({
 					currentPlayer: {
 						...currentPlayer,
 						role: PlayerRoles.Artist
 					}
 				});
+			} else { // If the current player was the Artist, set to be Guesser
+				this.setState({
+					currentPlayer: {
+						...currentPlayer,
+						role: PlayerRoles.Guesser
+					},
+					artistIsChoosing: true
+				}
+				);
 			}
 
 			// Set all other players to be the guesser
@@ -245,7 +331,8 @@ export class App extends React.Component<{}, AppState> {
 							...p,
 							role: p.guid !== newArtistGuid ? PlayerRoles.Guesser : PlayerRoles.Artist
 						})
-					)
+					),
+					artistIsChoosing: true
 				})
 			);
 		});
@@ -272,23 +359,5 @@ export class App extends React.Component<{}, AppState> {
 		});
 	}
 
-	// private setWindowSize = () => {
-	// 	// Get the window dimensions (Max width 1200)
-	// 	const wWidth: number = window.innerWidth < 1200 ? window.innerWidth : 1200;
-	// 	const wHeight: number = window.innerHeight;
-
-	// 	// Get the scaled wHeight
-	// 	const canvasHeightFromWidth: number = getCanvasHeightFromWidth(wWidth);
-
-	// 	// Set the state
-	// 	this.setState({
-	// 		// If the scaled canvas height is bigger than the window
-	// 		canvasWidth: canvasHeightFromWidth > wHeight
-	// 			// get width from height
-	// 			? getCanvasWidthFromHeight(wHeight)
-	// 			// Else, use wWidth
-	// 			: wWidth
-	// 	});
-	// }
 }
 

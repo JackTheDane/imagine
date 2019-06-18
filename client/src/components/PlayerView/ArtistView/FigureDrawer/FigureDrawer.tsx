@@ -62,15 +62,11 @@ export function FigureDrawer({
 
   switch (tabIndex) {
     // Previously used
-    case 1: {
-      tabContent = <FigureGrid figures={prevUsedFigures.filter(f => checkForMatch(f.aliases))} onAddFigure={addFigure} />
-    }
+    case 1: tabContent = <FigureGrid figures={prevUsedFigures.filter(f => checkForMatch(f.aliases))} onAddFigure={addFigure} />
       break;
 
     // Default case, main "All tab"
-    default: {
-      tabContent = <FigureGrid figures={figures.filter(f => checkForMatch(f.aliases))} onAddFigure={addNewFigure} />
-    }
+    default: tabContent = <FigureGrid figures={figures.filter(f => checkForMatch(f.aliases))} onAddFigure={addNewFigure} />
       break;
   }
 

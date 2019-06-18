@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { IMessage } from '../../../models/interfaces/IMessage';
 import s from './PlayerGuessPopper.module.scss';
+import { MessageTypes } from '../../../models/enums/MessageTypes';
 
 export interface PlayerGuessPopperProps {
   userGuess: IMessage;
@@ -21,8 +22,14 @@ export function PlayerGuessPopper({
 
   }, [userGuess]);
 
+  let className: string = s.root;
+
+  if (userGuess.type === MessageTypes.success) {
+    className += ` ${s.success}`;
+  }
+
   return (
-    <div className={s.root} key={guessKey}>
+    <div className={className} key={guessKey}>
       {userGuess.text}
     </div>
   );

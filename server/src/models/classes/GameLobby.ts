@@ -230,17 +230,17 @@ export class GameLobby {
         return false;
       }
 
-      // Emit guess to other players
-      player.socket.to(this.roomName).emit('otherPlayerGuess', {
-        playerGuid: player.guid,
-        guess
-      } as {
-        playerGuid: string;
-        guess: string;
-      });
 
       // Check if guess matches subject (without spaces)
       if (currentSubject.text.toLowerCase() !== guess.toLowerCase()) {
+        // Emit guess to other players
+        player.socket.to(this.roomName).emit('otherPlayerGuess', {
+          playerGuid: player.guid,
+          guess
+        } as {
+          playerGuid: string;
+          guess: string;
+        });
         return false; // If not, return false
       }
 
@@ -255,13 +255,15 @@ export class GameLobby {
       // Emit that the player won
       this.server.to(this.roomName).emit('winnerOfRound', {
         guid: player.guid,
+        guess,
         score: player.getScore()
       });
 
       // Start next round
-      this.startNextRound();
 
-      return true;
+      const nextArtistPlayer: Player | false = this.startNextRound();
+
+      return nextArtistPlayer !== false;
 
     } catch (error) {
       console.log('Error making guess: ', error);

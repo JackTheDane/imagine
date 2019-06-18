@@ -12,6 +12,23 @@
   margin: auto;
 }
 
+.placeholderWrapper {
+
+
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  margin: -8px -8px 10px;
+
+  & > * {
+    display: flex;
+
+    box-sizing: border-box;
+    padding: 8px;
+  }
+}
+
 .canvas {
   border: 1px solid;
 }

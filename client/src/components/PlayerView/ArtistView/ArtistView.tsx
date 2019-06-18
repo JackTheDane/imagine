@@ -121,7 +121,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						}}>
 
 							<Hidden mdUp implementation="css">
-								<Fab color="primary" onClick={() => this.onMobileFigureChange(!openMobileFigureDrawer)}>
+								<Fab style={{ marginRight: 10 }} color="primary" onClick={() => this.onMobileFigureChange(!openMobileFigureDrawer)}>
 									<Icon>
 										add_to_photos
 									</Icon>
@@ -652,11 +652,24 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			return;
 		}
 
+		if (this.c.getActiveObject) {
+			this.c.discardActiveObject();
+		}
+
 		// Get all Canvas Objects
 		const objects: fabric.Object[] = this.c.getObjects('image');
 
+
 		// These are names that where not found on the canvas
 		let notYetUsedSnapshots: string[] = Object.keys(snapshot);
+
+		const usedObject: fabric.Object[] = [];
+
+		const addToUsedObjects = (object: fabric.Object) => {
+			if (!usedObject.includes(object)) {
+				usedObject.push(object);
+			}
+		}
 
 		for (let i = 0; i < objects.length; i++) {
 			const o = objects[i];
@@ -682,6 +695,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			const checkAndSetProperty = (property: 'left' | 'top' | 'angle'): void => {
 				if (o[property] !== oSnapshot[property]) {
 					o.set(property, oSnapshot[property]);
+					addToUsedObjects(o);
 				}
 			}
 
@@ -692,6 +706,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			if (o.scaleX !== oSnapshot.scale) {
 				o.set('scaleX', oSnapshot.scale);
 				o.set('scaleY', oSnapshot.scale);
+				addToUsedObjects(o);
 			}
 		};
 
@@ -714,7 +729,13 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			);
 		});
 
-		this.c.renderAll();
+		if (usedObject.length > 0) {
+			const sel = new fabric.ActiveSelection(usedObject, {
+				canvas: this.c
+			});
+
+			this.c.setActiveObject(sel).requestRenderAll();
+		}
 	}
 
 	private generateSnapshotsFromObjects = (objects: fabric.Object[]): IObjectSnapshot => {
@@ -800,6 +821,9 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						}
 
 						this.c.add(img);
+
+						this.c.setActiveObject(img);
+
 						resolve(img);
 					}
 				},
@@ -809,44 +833,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 	};
 
 	// ---- Setters ---- //
-
-	private createActiveGroupFromObjects = (objects: fabric.Object[]) => {
-		if (!this.c || objects.length === 0) {
-			return;
-		}
-
-		this.c.discardActiveObject();
-
-		let newActiveObject: fabric.Object;
-
-		if (objects.length === 1) {
-			newActiveObject = objects[0];
-		} else {
-
-			//FIXME: Needs waaaay more testing
-
-			// const group: fabric.Group = new fabric.Group();
-			// group.canvas = this.c;
-
-			// objects.forEach(o => {
-			// 	group.addWithUpdate(o);
-			// });
-
-			// newActiveObject = group;
-
-			const sel = new fabric.ActiveSelection(undefined, {
-				canvas: this.c,
-			});
-
-			objects.forEach(o => {
-				sel.addWithUpdate(o);
-			});
-
-			newActiveObject = sel;
-		}
-
-		this.c.setActiveObject(newActiveObject).requestRenderAll();
-	}
 
 	private getScaledImageInfo = (image: fabric.Image): IImageInfo | undefined => {
 

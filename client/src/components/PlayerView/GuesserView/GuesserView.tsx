@@ -16,10 +16,11 @@ import { SubjectPlacerholder } from '../../../models/interfaces/SubjectPlacehold
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 import { ScreenKeyboard } from './ScreenKeyboard/ScreenKeyboard';
-import { Grid, Icon, Button } from '@material-ui/core';
+import { Grid, Icon } from '@material-ui/core';
 
 export interface GuesserViewProps extends ISharedViewProps {
 	onGuess: (guess: string) => void;
+	roundIsActive: boolean;
 }
 
 export interface GuesserViewState {
@@ -62,6 +63,10 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			width: canvasWidth,
 			height: canvasWidth * (0.75)
 		};
+
+		if (!this.props.roundIsActive) {
+			return <div></div>;
+		}
 
 		return (
 
@@ -203,14 +208,10 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 		const {
 			guessText,
-			placeholder
+			numberOfPlaceholderFields
 		} = this.state;
 
-		const numberOfPlaceholderLetters: number = placeholder.placeholder.reduce(
-			(accumulator: number, currVal: number) => accumulator + currVal
-		);
-
-		if (numberOfPlaceholderLetters < guessText.length) return;
+		if (numberOfPlaceholderFields < guessText.length) return;
 
 		this.setState(
 			({ guessText }) => ({
@@ -236,7 +237,6 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		const {
 			placeholder,
 			guessText,
-			numberOfPlaceholderFields,
 			lastGuessIncorrect
 		} = this.state;
 
@@ -246,21 +246,20 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 		return placeholder && (
 			<div
-				className={s.placeholderWrapper}
 				style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
 			>
 				<div
-					style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: '1.7em' }}
+					style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: '1.6em' }}
 				>
-					<Icon style={{ marginBottom: 5, fontSize: '1.3em' }}>
+					<Icon style={{ marginBottom: 5, fontSize: '1.5em' }}>
 						{placeholder.topic.iconName}
 					</Icon>
 					{placeholder.topic.name}
 				</div>
-				<div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+				<div className={s.placeholderWrapper}>
 					{placeholder.placeholder.map(
 						(numberOfLetters: number, j: number): JSX.Element => (
-							<div key={`ph${j}`} style={{ display: 'flex', marginBottom: 10 }}>
+							<div key={`ph${j}`}>
 								{
 									Array.apply(null, Array(numberOfLetters)).map(
 										(undef: any, i: number): JSX.Element => {

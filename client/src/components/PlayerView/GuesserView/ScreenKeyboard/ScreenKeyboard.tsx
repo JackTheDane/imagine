@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Grid, Button, Icon } from '@material-ui/core';
+import { Button, Icon } from '@material-ui/core';
 import { keys } from './keys';
 import s from './ScreenKeyboard.module.scss';
 
@@ -17,15 +17,19 @@ export function ScreenKeyboard({
   onSubmit
 }: ScreenKeyboardProps): JSX.Element {
 
-  const genereateKey = (key: string): JSX.Element => (
+  const generateKey = (key: string): JSX.Element => (
     <div className={s.buttonWrapper}>
-      <Button onClick={() => onKeyClick(key)} className={s.keyButton}> {key} </Button>
+      <Button style={{ textTransform: 'lowercase' }} onClick={() => onKeyClick(key)} className={s.keyButton}> {key} </Button>
     </div>
   );
 
+  React.useEffect(() => {
+
+  }, []);
+
   return (
     <div className={s.root}>
-      {keys.map(genereateKey)}
+      {keys.map(generateKey)}
 
       <div className={`${s.buttonWrapper} ${s.deleteButton}`}>
         <Button onClick={onDeleteClick} className={s.keyButton}>

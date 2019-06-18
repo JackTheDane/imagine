@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { Player } from '../../models/interfaces/Player';
-import { Avatar, List, ListItem, ListItemAvatar, Divider, ListItemText, Fab, Icon, Hidden, withWidth, Drawer } from '@material-ui/core';
+import { Avatar, List, ListItem, ListItemAvatar, Divider, ListItemText, Hidden, withWidth, Drawer } from '@material-ui/core';
 import { IMessage } from '../../models/interfaces/IMessage';
 import s from './PlayerDrawer.module.scss';
 import { PlayerCoin } from './PlayerCoin/PlayerCoin';
 import { PlayerGuessPopper } from './PlayerGuessPopper/PlayerGuessPopper';
+import { PlayerRoles } from '../../models/enums/PlayerRoles';
 
 
 
@@ -49,6 +50,7 @@ function InnerPlayerDrawer({
           name={player.name}
           score={player.score}
           avatarSize={!isBig ? 'normal' : 'large'}
+          isArtist={player.role === PlayerRoles.Artist}
         />
       </div>
     )
@@ -63,6 +65,7 @@ function InnerPlayerDrawer({
             imgSrc="https://material-ui.com/static/images/avatar/1.jpg"
             name={currentPlayer.name}
             score={currentPlayer.score}
+            isArtist={currentPlayer.role === PlayerRoles.Artist}
             avatarSize="large"
           />
         </div>
@@ -71,8 +74,8 @@ function InnerPlayerDrawer({
         <Hidden smUp>
           {
             userGuesses.length > 0
-              ? generateNormalPlayerCoin(userGuesses[userGuesses.length - 1].player, true)
-              : scoreSortedPlayers.length > 0 && generateNormalPlayerCoin(scoreSortedPlayers[scoreSortedPlayers.length - 1], true)
+              ? generateNormalPlayerCoin(userGuesses[userGuesses.length - 1].player)
+              : scoreSortedPlayers.length > 0 && generateNormalPlayerCoin(scoreSortedPlayers[scoreSortedPlayers.length - 1])
           }
         </Hidden>
 

@@ -9,12 +9,14 @@ export interface PlayerViewProps {
   playerRole: PlayerRoles;
   ioSocket: SocketIOClient.Socket;
   onGuesserGuess: (guess: string) => void;
+  roundIsActive: boolean;
 }
 
 export function PlayerView({
   ioSocket,
   playerRole,
-  onGuesserGuess
+  onGuesserGuess,
+  roundIsActive
 }: PlayerViewProps): JSX.Element {
 
 
@@ -23,6 +25,6 @@ export function PlayerView({
   }
 
   return playerRole === PlayerRoles.Guesser
-    ? <GuesserView onGuess={onGuesserGuess} {...commonViewProps} />
+    ? <GuesserView roundIsActive={roundIsActive} onGuess={onGuesserGuess} {...commonViewProps} />
     : <ArtistView {...commonViewProps} />;
 }
