@@ -6,7 +6,7 @@ export interface EnableFullscreenDialogProps { }
 
 export function EnableFullscreenDialog(): JSX.Element {
 
-  const [shouldOpen, setShouldOpen] = React.useState<boolean>(window.innerWidth < 1200);
+  const [shouldOpen, setShouldOpen] = React.useState<boolean>(window.innerWidth < 1000);
 
   const enableFullscreen = () => {
     openFullscreen();
