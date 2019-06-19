@@ -34,7 +34,7 @@ export function EnableFullscreenDialog(): JSX.Element {
       <DialogContent>
         <div style={{
           display: 'flex',
-          justifyContent: 'center',
+          justifyContent: 'flex-end',
           width: '100%'
         }}>
           <div style={{ marginRight: 10 }}>
