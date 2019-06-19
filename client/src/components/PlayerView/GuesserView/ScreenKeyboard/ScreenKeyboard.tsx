@@ -23,10 +23,6 @@ export function ScreenKeyboard({
     </div>
   );
 
-  React.useEffect(() => {
-
-  }, []);
-
   return (
     <div className={s.root}>
       {keys.map(generateKey)}

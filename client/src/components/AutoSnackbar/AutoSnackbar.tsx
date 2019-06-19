@@ -9,7 +9,7 @@ export interface AutoSnackbarProps extends Partial<SnackbarProps> {
   iconName?: string;
 }
 
-export const SlideTransition = (props: any): JSX.Element => <Slide {...props} direction="up" />;
+export const SlideTransition = (direction: 'up' | 'down', props: any): JSX.Element => <Slide {...props} direction={direction} />;
 
 const snackbarStyles = makeStyles(theme => ({
   success: {
@@ -31,6 +31,7 @@ export function AutoSnackbar({
   message,
   variant,
   iconName,
+  anchorOrigin,
   ...rest
 }: AutoSnackbarProps) {
 
@@ -39,14 +40,14 @@ export function AutoSnackbar({
   const [openState, setOpenState] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    setOpenState(open || false);
-  }, [open]);
-
-  React.useEffect(() => {
     if (message) {
       setOpenState(true);
     }
   }, [message]);
+
+  React.useEffect(() => {
+    setOpenState(open || false);
+  }, [open]);
 
   const handleClose = () => {
     setOpenState(false);
@@ -54,13 +55,18 @@ export function AutoSnackbar({
 
   const contentClassName: string = variant ? classes[variant] : '';
 
+  const snackbarDirection: 'up' | 'down' = anchorOrigin && anchorOrigin.vertical === 'top'
+    ? 'down'
+    : 'up';
+
   return (
     <Snackbar
       open={openState}
       onClose={handleClose}
       message={message}
+      anchorOrigin={anchorOrigin}
       {...rest}
-      TransitionComponent={SlideTransition}
+      TransitionComponent={(props: any) => SlideTransition(snackbarDirection, props)}
       autoHideDuration={2500}
     >
       <SnackbarContent

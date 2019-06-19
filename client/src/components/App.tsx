@@ -11,6 +11,8 @@ import { PlayerView } from './PlayerView/PlayerView';
 import { webSocketPort } from '../config/webSocketPort';
 import { MessageTypes } from '../models/enums/MessageTypes';
 import { Dialog, DialogTitle, DialogContent, DialogContentText } from '@material-ui/core';
+import { fabric } from 'fabric';
+import { EnableFullscreenDialog } from './EnableFullscreenDialog/EnableFullscreenDialog';
 
 export interface AppState {
 	currentPlayer: Player | undefined;
@@ -84,7 +86,9 @@ export class App extends React.Component<{}, AppState> {
 					message={playerWonMessage}
 					variant="success"
 					iconName="🎉"
-				/>{artistPlayer && artistPlayer.name}
+				/>
+
+				<EnableFullscreenDialog />
 
 				<Dialog open={artistChoosing}>
 					<DialogTitle>
@@ -100,8 +104,6 @@ export class App extends React.Component<{}, AppState> {
 						</DialogContentText>
 					</DialogContent>
 				</Dialog>
-
-				{artistChoosing && <h1>Not yet</h1>}
 			</>
 		);
 	}

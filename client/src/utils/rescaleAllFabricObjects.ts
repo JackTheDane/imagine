@@ -11,7 +11,6 @@ export const rescaleAllFabricObjects = (
   canvas.setHeight(canvas.getHeight() * newScale);
 
   const objects: fabric.Object[] = canvas.getObjects();
-  console.log(objects);
 
   // array of already scaled groups to prevent groups being scaled multiple times
   const alreadyScaledGroups: fabric.Group[] = [];

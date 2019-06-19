@@ -1,6 +1,6 @@
 .gridContainer {
   display: flex;
-  flex-wrap: wrap;
+  // flex-wrap: wrap;
 
   height: 100%;
 }
@@ -13,8 +13,8 @@
 
   box-sizing: border-box;
 
-  width: 25vw;
-  min-width: 400px;
+  width: 100%;
+  max-width: 400px;
   margin: auto;
   padding: 15px 30px;
 }
@@ -48,8 +48,8 @@
 
   padding: 10px;
   margin: 0 auto;
-
-  min-width: 360px;
+  min-width: 300px;
+  width: calc(100% - 400px);
 }
 
 .canvasWrapper {

@@ -99,7 +99,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 				</div>
 
-				<AutoSnackbar open={lastErrorTimestamp !== ''} key={lastErrorTimestamp} message="Wrong guess, try again!" />
+				<AutoSnackbar open={false} key={lastErrorTimestamp} anchorOrigin={{ horizontal: 'center', vertical: 'top' }} message="Wrong guess, try again!" />
 			</>
 
 		);
@@ -250,16 +250,16 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 			return;
 		}
 
-		switch (e.keyCode) {
-			case 46: // Delete key
-			case 8: // Backspace
+		switch (e.key) {
+			case 'Delete':
+			case 'Backspace':
 				this.deleteLetterFromGuess();
 				return;
 
-			case 32: // Space
+			case 'Space':
 				return;
 
-			case 13: // Enter key
+			case 'Enter':
 				this.onGuessSubmission(); // Submit guess
 				return;
 
@@ -374,7 +374,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		// Emit the guess text
 		ioSocket.emit('guess', guessTextWithSpaces, (answerWasCorrect: boolean) => {
 
-			if (answerWasCorrect) {
+			if (!answerWasCorrect) {
 				this.setState({
 					lastErrorTimestamp: Date.now() + ''
 				});
@@ -600,10 +600,12 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		}
 
 		const objects: fabric.Object[] = this.c.getObjects('image');
-		const imageToRemove: fabric.Object | undefined = objects.find(o => o.name != null && o.name === name);
+		const imagesToRemove: fabric.Object[] = objects.filter(o => o.name != null && o.name === name);
 
-		if (imageToRemove) {
-			this.c.remove(imageToRemove);
+		if (imagesToRemove.length > 0) {
+			for (let i = 0; i < imagesToRemove.length; i++) {
+				this.c.remove(imagesToRemove[i]);
+			}
 		}
 	}
 

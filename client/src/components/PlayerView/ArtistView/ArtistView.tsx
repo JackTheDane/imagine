@@ -180,6 +180,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 		this.setScaledCanvasWidth();
 		window.addEventListener('resize', this.setScaledCanvasWidth);
+		window.addEventListener('keydown', this.onKeyPress);
 
 		this.init();
 	}
@@ -222,6 +223,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		}
 
 		window.removeEventListener('resize', this.setScaledCanvasWidth);
+		window.removeEventListener('keydown', this.onKeyPress);
 	}
 
 	// ---- Callbacks ---- //
@@ -274,6 +276,39 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		});
 
 		this.props.ioSocket.emit('newSubjectChosen', newSubject);
+	}
+
+	// ---- Regular callbacks ---- //
+	private onKeyPress = (e: KeyboardEvent) => {
+		switch (e.key) {
+
+			case 'Z':
+			case 'z':
+				if (e.ctrlKey) {
+					// Redo if shit key
+					if (e.shiftKey) {
+						this.onRedoChanges();
+					} else { // Else, undo
+						this.onUndoChanges();
+					}
+				}
+				return;
+
+			case 'Y':
+			case 'y': // Y
+				if (e.ctrlKey) {
+					this.onRedoChanges();
+				}
+				return;
+
+			case 'Backspace': // Backspace
+			case 'Delete': // Delete
+				this.deleteActiveObjects();
+				return;
+
+			default:
+				break;
+		}
 	}
 
 	// ---- Canvas Utilities and Setup ---- //
