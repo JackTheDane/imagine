@@ -11,7 +11,6 @@ import { PlayerView } from './PlayerView/PlayerView';
 import { webSocketPort } from '../config/webSocketPort';
 import { MessageTypes } from '../models/enums/MessageTypes';
 import { Dialog, DialogTitle, DialogContent, DialogContentText } from '@material-ui/core';
-import { fabric } from 'fabric';
 import { EnableFullscreenDialog } from './EnableFullscreenDialog/EnableFullscreenDialog';
 
 export interface AppState {
@@ -209,6 +208,7 @@ export class App extends React.Component<{}, AppState> {
 		this.socket.on('winnerOfRound', ({ guid, score, guess }: { guid: string; guess: string; score: number; }) => {
 			const {
 				currentPlayer,
+				userGuesses,
 				players
 			} = this.state;
 
@@ -216,6 +216,7 @@ export class App extends React.Component<{}, AppState> {
 
 			// Check if is current player
 			if (currentPlayer && isCurrentPlayer) {
+				let userGuessFound: boolean = false;
 				// Set the new score
 				this.setState({
 					currentPlayer: {
@@ -232,7 +233,21 @@ export class App extends React.Component<{}, AppState> {
 
 						return returnPlayer;
 					}),
-					playerWonMessage: 'You won this round!'
+					playerWonMessage: 'You won this round!',
+					userGuesses: [
+						...userGuesses.reverse().map(guess => {
+							const isLastPlayerGuess: boolean = !userGuessFound && guess.player === currentPlayer;
+
+							if (isLastPlayerGuess) {
+								userGuessFound = true;
+							}
+
+							return ({
+								...guess,
+								type: isLastPlayerGuess ? MessageTypes.success : guess.type
+							})
+						}).reverse()
+					]
 				});
 
 				return;
@@ -241,7 +256,14 @@ export class App extends React.Component<{}, AppState> {
 			// The current player was not the winner of the round
 
 			let artistPlayerFound: boolean = false;
-			let playerName: string = 'A player';
+
+			const player: Player | undefined = players.find(p => p.guid === guid);
+
+			if (!player) {
+				console.log('Player not found');
+				return;
+			}
+
 
 			// Else, player is not current player
 			this.setState(
@@ -249,8 +271,6 @@ export class App extends React.Component<{}, AppState> {
 					players: players.map((p: Player): Player => {
 						if (p.guid === guid) {
 							p.score = score;
-
-							playerName = p.name;
 
 						} else if (p.role === PlayerRoles.Artist) {
 							// Increment the score if the player was the Artist
@@ -260,9 +280,10 @@ export class App extends React.Component<{}, AppState> {
 
 						return p;
 					}),
+					userGuesses: [...userGuesses, { player, text: guess, type: MessageTypes.success }], // Push correct player guess
 					playerWonMessage: <div style={{ textAlign: 'center' }}>
 						<div>
-							{playerName} has won the round!
+							{player.name} has won the round!
 						</div>
 						<div>
 							Subject was: <b style={{ textTransform: 'capitalize' }} > {guess} </b>

@@ -17,8 +17,8 @@ export function ScreenKeyboard({
   onSubmit
 }: ScreenKeyboardProps): JSX.Element {
 
-  const generateKey = (key: string): JSX.Element => (
-    <div className={s.buttonWrapper}>
+  const generateKey = (key: string, idx: number = 0): JSX.Element => (
+    <div className={s.buttonWrapper} key={`k${idx}`}>
       <Button style={{ textTransform: 'lowercase' }} onClick={() => onKeyClick(key)} className={s.keyButton}> {key} </Button>
     </div>
   );

@@ -183,6 +183,8 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		window.addEventListener('keydown', this.onKeyPress);
 
 		this.init();
+
+		document.title = 'Imagine - Your turn';
 	}
 
 	public componentDidUpdate(prevProps: ArtistViewProps, prevState: ArtistViewState): void {

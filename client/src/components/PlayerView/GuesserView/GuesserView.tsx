@@ -118,24 +118,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 
 		ioSocket.emit('ready');
 
-		ioSocket.on('newSubject', (placeholder: SubjectPlacerholder) => {
-			if (!this._isMounted || !placeholder || !placeholder.placeholder) {
-				return;
-			}
-
-			const numberOfPlaceholderFields: number = placeholder.placeholder.reduce(
-				(accumulator, currentValue) => accumulator + currentValue
-			);
-
-			this.setState({
-				placeholder,
-				numberOfPlaceholderFields,
-				guessText: ''
-			});
-		});
-
-
-
+		ioSocket.on('newSubject', this.onNewSubject);
 		ioSocket.on('cEvent', (event: string) => {
 
 			if (!this._isMounted) {
@@ -161,11 +144,13 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		this.setScaledCanvasWidth();
 		window.addEventListener('resize', this.setScaledCanvasWidth);
 		window.addEventListener('keydown', this.onKeyPress);
+
+		document.title = 'Imagine';
 	}
 
 	public componentDidUpdate(prevProps: GuesserViewProps, prevState: GuesserViewState): void {
 
-		if (!this.state.canvasWidth || !this.c) return;
+		if (!this.state.canvasWidth || !this.c || !this._isMounted) return;
 
 		if (!prevState.canvasWidth) {
 			this.setInitialCanvasSize();
@@ -197,7 +182,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		} = this.props;
 
 		if (ioSocket) {
-			ioSocket.off('newSubject');
+			ioSocket.off('newSubject', this.onNewSubject);
 			ioSocket.off('cEvent');
 		}
 
@@ -303,12 +288,14 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 									{
 										Array.apply(null, Array(numberOfLetters)).map(
 											(undef: any, i: number): JSX.Element => {
+												const textColor: string | undefined = lastGuessIncorrect ? red[600] : undefined
 												overAllIndex++;
 												return (
 													<div
 														key={`phl${i}`}
 														style={{
-															borderBottomColor: lastGuessIncorrect ? red[600] : undefined
+															borderBottomColor: textColor,
+															color: textColor
 														}}
 														className={`
 													${s.textPlaceholderElem}
@@ -332,6 +319,22 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 				</div>
 			</div>
 		);
+	}
+
+	private onNewSubject = (placeholder: SubjectPlacerholder): void => {
+		if (!this._isMounted || !placeholder || !placeholder.placeholder) {
+			return;
+		}
+
+		const numberOfPlaceholderFields: number = placeholder.placeholder.reduce(
+			(accumulator, currentValue) => accumulator + currentValue
+		);
+
+		this.setState({
+			placeholder,
+			numberOfPlaceholderFields,
+			guessText: ''
+		});
 	}
 
 	// Guess submission
@@ -374,6 +377,8 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		// Emit the guess text
 		ioSocket.emit('guess', guessTextWithSpaces, (answerWasCorrect: boolean) => {
 
+			if (!this._isMounted) return;
+
 			if (!answerWasCorrect) {
 				this.setState({
 					lastErrorTimestamp: Date.now() + ''
@@ -398,7 +403,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 	}
 
 	private setScaledCanvasWidth = () => {
-		if (!this.canvasWrapperRef || !this.canvasWrapperRef.current) return;
+		if (!this.canvasWrapperRef || !this.canvasWrapperRef.current || !this._isMounted) return;
 
 		const {
 			clientWidth,
@@ -557,8 +562,12 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 					// easing: fabric.util.ease.easeInOutCubic,
 					easing: (t: number, b: number, c: number, d: number): number => c * t / d + b,
 					onChange: (e: any) => {
-						if (this.c) {
-							this.c.renderAll();
+						if (this._isMounted && this.c) {
+							try {
+								this.c.renderAll();
+							} catch (error) {
+								console.log('RenderAllError', e);
+							}
 						}
 					}
 				}

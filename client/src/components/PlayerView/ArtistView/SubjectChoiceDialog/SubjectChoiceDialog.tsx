@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Subject } from '../../../../models/interfaces/Subject';
-import { Dialog, DialogTitle, DialogContent, DialogContentText, Button, List, ListItem, ListItemAvatar, ListItemText, Icon } from '@material-ui/core';
+import { Dialog, DialogTitle, DialogContent, DialogContentText, List, ListItem, ListItemAvatar, ListItemText, Icon } from '@material-ui/core';
 import s from './SubjectChoiceDialog.module.scss';
 
 export interface SubjectChoiceDialogProps {
@@ -52,8 +52,6 @@ export function SubjectChoiceDialog({
             })
           }
         </List>
-
-        <Button />
 
       </DialogContent>
     </Dialog>
