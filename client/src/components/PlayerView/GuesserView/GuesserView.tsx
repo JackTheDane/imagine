@@ -16,7 +16,7 @@ import { SubjectPlacerholder } from '../../../models/interfaces/SubjectPlacehold
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 import { ScreenKeyboard } from './ScreenKeyboard/ScreenKeyboard';
-import { Icon, makeStyles } from '@material-ui/core';
+import { Icon } from '@material-ui/core';
 import { red } from '@material-ui/core/colors';
 import { AutoSnackbar } from '../../AutoSnackbar/AutoSnackbar';
 

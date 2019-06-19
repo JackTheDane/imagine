@@ -20,7 +20,7 @@ import { Subject } from '../../../models/interfaces/Subject';
 import { ArtistToolbar } from './Toolbar/ArtistToolbar';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
 import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
-import { Hidden, Fab, Icon, Button, Tooltip } from '@material-ui/core';
+import { Hidden, Fab, Icon, Tooltip, IconButton } from '@material-ui/core';
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 
@@ -160,11 +160,11 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						{
 							chosenSubject && <div className={s.subjectWrapper}>
 								<Tooltip title={hideSubject ? 'Show subject' : 'Hide subject'} placement="top" >
-									<Button onClick={() => { this.setState({ hideSubject: !hideSubject }) }}>
+									<IconButton onClick={() => { this.setState({ hideSubject: !hideSubject }) }}>
 										<Icon>
 											{hideSubject ? 'visibility' : 'visibility_off'}
 										</Icon>
-									</Button>
+									</IconButton>
 								</Tooltip>
 
 								{!hideSubject && <>
