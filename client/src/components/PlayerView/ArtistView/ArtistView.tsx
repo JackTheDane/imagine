@@ -20,7 +20,7 @@ import { Subject } from '../../../models/interfaces/Subject';
 import { ArtistToolbar } from './Toolbar/ArtistToolbar';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
 import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
-import { Hidden, Fab, Icon } from '@material-ui/core';
+import { Hidden, Fab, Icon, Button, Tooltip } from '@material-ui/core';
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 
@@ -36,9 +36,11 @@ export interface ArtistViewState {
 	historyIndex: number;
 	itemsSelected: boolean;
 	availableSubjectChoices: Subject[];
+	chosenSubject: Subject | undefined;
 	openSubjectDialog: boolean;
 	openMobileFigureDrawer: boolean;
 	canvasWidth: number;
+	hideSubject: boolean;
 }
 
 export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState> {
@@ -67,7 +69,9 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			openSubjectDialog: false,
 			availableSubjectChoices: [],
 			openMobileFigureDrawer: false,
-			canvasWidth: 0
+			canvasWidth: 0,
+			chosenSubject: undefined,
+			hideSubject: fabric.isTouchSupported
 		};
 	}
 
@@ -79,7 +83,9 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			itemsSelected,
 			availableSubjectChoices,
 			openSubjectDialog,
-			openMobileFigureDrawer
+			openMobileFigureDrawer,
+			chosenSubject,
+			hideSubject
 		} = this.state;
 
 		return (
@@ -148,9 +154,43 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 									}
 								]}
 							/>
+
 						</div>
+
+						{
+							chosenSubject && <div className={s.subjectWrapper}>
+								<Tooltip title={hideSubject ? 'Show subject' : 'Hide subject'} placement="top" >
+									<Button onClick={() => { this.setState({ hideSubject: !hideSubject }) }}>
+										<Icon>
+											{hideSubject ? 'visibility' : 'visibility_off'}
+										</Icon>
+									</Button>
+								</Tooltip>
+
+								{!hideSubject && <>
+									<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+										<div style={{ display: 'flex' }}>
+											<Icon fontSize="small">
+												{chosenSubject.topic.iconName}
+											</Icon>
+											<span style={{ marginLeft: 5 }}>
+												{chosenSubject.topic.name}
+											</span>
+										</div>
+
+										<div className={s.subjectText}>
+											{chosenSubject.text}
+										</div>
+									</div>
+
+								</>}
+							</div>
+						}
+
 					</div>
 				</div>
+
 			</>
 		);
 	}
@@ -274,7 +314,8 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 		this.setState({
 			openSubjectDialog: false,
-			availableSubjectChoices: []
+			availableSubjectChoices: [],
+			chosenSubject: newSubject
 		});
 
 		this.props.ioSocket.emit('newSubjectChosen', newSubject);

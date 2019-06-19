@@ -16,7 +16,7 @@ import { SubjectPlacerholder } from '../../../models/interfaces/SubjectPlacehold
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 import { ScreenKeyboard } from './ScreenKeyboard/ScreenKeyboard';
-import { Icon } from '@material-ui/core';
+import { Icon, makeStyles } from '@material-ui/core';
 import { red } from '@material-ui/core/colors';
 import { AutoSnackbar } from '../../AutoSnackbar/AutoSnackbar';
 
@@ -72,7 +72,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		return (
 
 			<>
-				<div style={{ visibility: this.props.roundIsActive ? 'visible' : 'hidden' }} className={s.gridContainer}>
+				<div style={{ visibility: this.props.roundIsActive ? 'visible' : 'hidden' }} className={s.container}>
 
 					<div
 						className={s.viewWrapper}
