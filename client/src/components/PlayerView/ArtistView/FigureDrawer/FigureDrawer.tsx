@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Drawer, TextField, Hidden, Tabs, Tab, Icon, InputAdornment, IconButton } from '@material-ui/core';
+import { Drawer, TextField, Hidden, Tabs, Tab, Icon, InputAdornment, IconButton, SwipeableDrawer } from '@material-ui/core';
 import s from './FigureDrawer.module.scss';
 import { figures } from '../../../../config/figures';
 import { IFigure } from '../../../../models/interfaces/IFigure';
@@ -9,6 +9,7 @@ import { TextFieldProps } from '@material-ui/core/TextField';
 
 export interface FigureDrawerProps {
   mobileOpen: boolean;
+  onMobileOpen: () => void;
   onMobileClose: () => void;
   onAddImage: (src: string) => void;
 }
@@ -16,6 +17,7 @@ export interface FigureDrawerProps {
 export function FigureDrawer({
   mobileOpen,
   onAddImage,
+  onMobileOpen,
   onMobileClose
 }: FigureDrawerProps): JSX.Element {
 
@@ -140,20 +142,21 @@ export function FigureDrawer({
 
       {/* Mobile version */}
       <Hidden mdUp implementation="css">
-        <Drawer
+        <SwipeableDrawer
           variant="temporary"
           className={s.permanentDrawer}
           classes={{
             paper: s.permanentDrawerPaper,
           }}
           open={mobileOpen}
+          onOpen={onMobileOpen}
           onClose={onMobileClose}
           ModalProps={{
             keepMounted: true
           }}
         >
           {content}
-        </Drawer>
+        </SwipeableDrawer>
       </Hidden>
     </>
   );

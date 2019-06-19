@@ -2,7 +2,6 @@ import { ClientPlayer } from './models/interfaces/ClientPlayer';
 import { GameLobby } from './models/classes/GameLobby';
 import * as express from 'express';
 import * as socketio from 'socket.io';
-import * as path from 'path';
 import * as http from 'http';
 import { Player } from './models/classes/Player';
 

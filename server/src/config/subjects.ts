@@ -43,7 +43,7 @@ export const subjects: Subject[] = [
   },
   // Events
   {
-    text: 'The Moon Landing',
+    text: 'Moon Landing',
     topic: topics.event
   },
   // TV Show

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Player } from '../../models/interfaces/Player';
-import { Avatar, List, ListItem, ListItemAvatar, Divider, ListItemText, Hidden, withWidth, Drawer } from '@material-ui/core';
+import { Avatar, List, ListItem, ListItemAvatar, Divider, ListItemText, Hidden, withWidth, SwipeableDrawer } from '@material-ui/core';
 import { IMessage } from '../../models/interfaces/IMessage';
 import s from './PlayerDrawer.module.scss';
 import { PlayerCoin } from './PlayerCoin/PlayerCoin';
@@ -32,6 +32,10 @@ function InnerPlayerDrawer({
 
   const closeLog = () => {
     setShowLog(false);
+  }
+
+  const openLog = () => {
+    setShowLog(true);
   }
 
   const filteredUserGuesses: IMessage[] = [...userGuesses].filter(m => m.player.guid !== currentPlayer.guid);
@@ -90,7 +94,7 @@ function InnerPlayerDrawer({
 
       </div>
 
-      <Drawer
+      <SwipeableDrawer
         variant="temporary"
         anchor="right"
         className={s.permanentDrawer}
@@ -98,6 +102,7 @@ function InnerPlayerDrawer({
           paper: s.permanentDrawerPaper,
         }}
         open={showLog}
+        onOpen={openLog}
         onClose={closeLog}
       >
 
@@ -144,7 +149,7 @@ function InnerPlayerDrawer({
             )
           )}
         </List>
-      </Drawer>
+      </SwipeableDrawer>
     </div>
   );
 }

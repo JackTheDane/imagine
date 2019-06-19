@@ -105,7 +105,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 					}}
 				>
 					<div>
-						<FigureDrawer onMobileClose={() => this.onMobileFigureChange(false)} mobileOpen={openMobileFigureDrawer} onAddImage={(src: string) => { this.addNewImageToCanvas(src); if (openMobileFigureDrawer) { this.setState({ openMobileFigureDrawer: false }) } }} />
+						<FigureDrawer onMobileClose={() => this.onMobileFigureChange(false)} onMobileOpen={() => this.onMobileFigureChange(true)} mobileOpen={openMobileFigureDrawer} onAddImage={(src: string) => { this.addNewImageToCanvas(src); if (openMobileFigureDrawer) { this.setState({ openMobileFigureDrawer: false }) } }} />
 					</div>
 
 					<div
