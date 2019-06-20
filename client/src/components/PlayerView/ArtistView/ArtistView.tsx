@@ -20,7 +20,7 @@ import { Subject } from '../../../models/interfaces/Subject';
 import { ArtistToolbar } from './Toolbar/ArtistToolbar';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
 import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
-import { Hidden, Fab, Icon, Tooltip, IconButton } from '@material-ui/core';
+import { Hidden, Fab, Icon } from '@material-ui/core';
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 
@@ -83,9 +83,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			itemsSelected,
 			availableSubjectChoices,
 			openSubjectDialog,
-			openMobileFigureDrawer,
-			chosenSubject,
-			hideSubject
+			openMobileFigureDrawer
 		} = this.state;
 
 		return (
@@ -158,34 +156,34 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 						</div>
 
 						{
-							chosenSubject && <div className={s.subjectWrapper}>
-								<Tooltip title={hideSubject ? 'Show subject' : 'Hide subject'} placement="top" >
-									<IconButton onClick={() => { this.setState({ hideSubject: !hideSubject }) }}>
-										<Icon>
-											{hideSubject ? 'visibility' : 'visibility_off'}
-										</Icon>
-									</IconButton>
-								</Tooltip>
+							// chosenSubject && <div className={s.subjectWrapper}>
+							// 	<Tooltip title={hideSubject ? 'Show subject' : 'Hide subject'} placement="top" >
+							// 		<IconButton onClick={() => { this.setState({ hideSubject: !hideSubject }) }}>
+							// 			<Icon>
+							// 				{hideSubject ? 'visibility' : 'visibility_off'}
+							// 			</Icon>
+							// 		</IconButton>
+							// 	</Tooltip>
 
-								{!hideSubject && <>
-									<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+							// 	{!hideSubject && <>
+							// 		<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-										<div style={{ display: 'flex' }}>
-											<Icon fontSize="small">
-												{chosenSubject.topic.iconName}
-											</Icon>
-											<span style={{ marginLeft: 5 }}>
-												{chosenSubject.topic.name}
-											</span>
-										</div>
+							// 			<div style={{ display: 'flex' }}>
+							// 				<Icon fontSize="small">
+							// 					{chosenSubject.topic.iconName}
+							// 				</Icon>
+							// 				<span style={{ marginLeft: 5 }}>
+							// 					{chosenSubject.topic.name}
+							// 				</span>
+							// 			</div>
 
-										<div className={s.subjectText}>
-											{chosenSubject.text}
-										</div>
-									</div>
+							// 			<div className={s.subjectText}>
+							// 				{chosenSubject.text}
+							// 			</div>
+							// 		</div>
 
-								</>}
-							</div>
+							// 	</>}
+							// </div>
 						}
 
 					</div>

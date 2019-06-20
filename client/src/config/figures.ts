@@ -2,6 +2,44 @@ import { IFigure } from '../models/interfaces/IFigure';
 
 export const figures: IFigure[] = [
   {
+    src: 'swimming.svg',
+    aliases: [
+      'swimming',
+      'water',
+      'pool'
+    ]
+  },
+  {
+    src: 'sailboat.svg',
+    aliases: [
+      'sailboat',
+      'boat',
+      'ship'
+    ]
+  },
+  {
+    src: 'circle.svg',
+    aliases: [
+      'circle',
+      'round'
+    ]
+  },
+  {
+    src: 'no-parking.svg',
+    aliases: [
+      'no',
+      'stop',
+      'not'
+    ]
+  },
+  {
+    src: 'lightning.svg',
+    aliases: [
+      'lightning',
+      'thunder'
+    ]
+  },
+  {
     src: 'badge.svg',
     aliases: [
       'badge',
