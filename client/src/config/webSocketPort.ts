@@ -1,1 +1,1 @@
-export const webSocketPort: string = '192.168.0.6:3001';
+export const webSocketPort: string = 'http://localhost:3001';
