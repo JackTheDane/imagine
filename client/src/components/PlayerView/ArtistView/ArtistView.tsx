@@ -23,6 +23,7 @@ import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
 import { Hidden, Fab, Icon } from '@material-ui/core';
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
+import { ArtistCanvas } from './ArtistCanvas';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
@@ -48,7 +49,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 	private canvasWrapperRef = createRef<HTMLDivElement>();
 	private _isMounted: boolean;
 
-	private c: fabric.Canvas | undefined;
+	private c: ArtistCanvas | undefined;
 
 	private storedCanvasEvents: ICanvasEvent[] = [];
 	private storedObjectEvents: IObjectChanges = {};
@@ -155,37 +156,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 						</div>
 
-						{
-							// chosenSubject && <div className={s.subjectWrapper}>
-							// 	<Tooltip title={hideSubject ? 'Show subject' : 'Hide subject'} placement="top" >
-							// 		<IconButton onClick={() => { this.setState({ hideSubject: !hideSubject }) }}>
-							// 			<Icon>
-							// 				{hideSubject ? 'visibility' : 'visibility_off'}
-							// 			</Icon>
-							// 		</IconButton>
-							// 	</Tooltip>
-
-							// 	{!hideSubject && <>
-							// 		<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-
-							// 			<div style={{ display: 'flex' }}>
-							// 				<Icon fontSize="small">
-							// 					{chosenSubject.topic.iconName}
-							// 				</Icon>
-							// 				<span style={{ marginLeft: 5 }}>
-							// 					{chosenSubject.topic.name}
-							// 				</span>
-							// 			</div>
-
-							// 			<div className={s.subjectText}>
-							// 				{chosenSubject.text}
-							// 			</div>
-							// 		</div>
-
-							// 	</>}
-							// </div>
-						}
-
 					</div>
 				</div>
 
@@ -202,7 +172,9 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			ioSocket
 		} = this.props;
 
-		ioSocket.emit('ready');
+		if (!this.artistRef || !this.artistRef.current) return;
+
+		this.setScaledCanvasWidth();
 
 		ioSocket.on('newSubjectChoices', (newSubjects: Subject[]) => {
 
@@ -216,12 +188,12 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			});
 		});
 
-		this.setScaledCanvasWidth();
+		ioSocket.emit('ready');
+
 		window.addEventListener('resize', this.setScaledCanvasWidth);
 		window.addEventListener('keydown', this.onKeyPress);
 
-		this.init();
-
+		this.c = new ArtistCanvas(ioSocket, this.artistRef.current);
 		document.title = 'Imagine - Your turn';
 	}
 
@@ -442,54 +414,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		if (!this.c) {
 			return;
 		}
-
-		// TODO: Research how this drag and drop works.
-
-		this.c.on('dragenter', e => {
-			// console.log(e.dataTransfer);
-			console.log('Dragenter');
-		});
-
-		this.c.on('dragleave', () => {
-			console.log('Dragleave');
-		});
-
-		this.c.on('drop', e => {
-
-			try {
-				// If no event or no original event was passed with the event, return empty
-				if (!e || !e.e) {
-					console.log('No drop event');
-					return;
-				}
-
-				const event: any = e.e;
-
-				if (!event.dataTransfer || !event.dataTransfer.getData) {
-					console.log('No data transfer');
-					return;
-				}
-
-				const dataTransfer: string = event.dataTransfer.getData('text');
-
-				if (!dataTransfer) {
-					console.log('No data or canvas');
-					return;
-				}
-
-				this.addNewImageToCanvas(
-					dataTransfer,
-					{
-						top: getValueElse(event.offsetY, 0),
-						left: getValueElse(event.offsetX, 0)
-					}
-				);
-				console.log('Transfer success');
-			} catch (error) {
-				console.log('Error while getting drop data: ', error);
-			}
-
-		});
 
 		// Add and remove
 		this.c.on('object:added', (e: fabric.IEvent): void => {
