@@ -5,13 +5,14 @@ import { PlayerRoles } from '../models/enums/PlayerRoles';
 import { Player } from '../models/interfaces/Player';
 import { AutoSnackbar } from './AutoSnackbar/AutoSnackbar';
 import { IMessage } from '../models/interfaces/IMessage';
-import { PlayerDrawer } from './PlayerDrawer/PlayerDrawer';
-import { CreateAvatarDialog } from './CreateAvatarDialog/CreateAvatarDialog';
-import { PlayerView } from './PlayerView/PlayerView';
+// import { PlayerDrawer } from './PlayerDrawer/PlayerDrawer';
+// import { CreateAvatarDialog } from './CreateAvatarDialog/CreateAvatarDialog';
+// import { PlayerView } from './PlayerView/PlayerView';
 import { webSocketPort } from '../config/webSocketPort';
 import { MessageTypes } from '../models/enums/MessageTypes';
-import { Dialog, DialogTitle, DialogContent, DialogContentText } from '@material-ui/core';
+// import { Dialog, DialogTitle, DialogContent, DialogContentText } from '@material-ui/core';
 import { EnableFullscreenDialog } from './EnableFullscreenDialog/EnableFullscreenDialog';
+import { NewArtistView } from './PlayerView/ArtistView/NewArtistView';
 
 export interface AppState {
 	currentPlayer: Player | undefined;
@@ -51,35 +52,36 @@ export class App extends React.Component<{}, AppState> {
 			artistIsChoosing
 		} = this.state;
 
-		if (!currentPlayer) {
-			return <CreateAvatarDialog shouldOpen={showNameDialog} onPlayerNameSubmit={this.submitName} />;
-		}
+		// if (!currentPlayer) {
+		// 	return <CreateAvatarDialog shouldOpen={showNameDialog} onPlayerNameSubmit={this.submitName} />;
+		// }
 
-		const artistPlayer: Player | undefined = currentPlayer.role === PlayerRoles.Artist
-			? currentPlayer
-			: players.find(p => p.role === PlayerRoles.Artist)
+		// const artistPlayer: Player | undefined = currentPlayer.role === PlayerRoles.Artist
+		// 	? currentPlayer
+		// 	: players.find(p => p.role === PlayerRoles.Artist)
 
-		const artistChoosing: boolean = artistIsChoosing && artistPlayer !== currentPlayer;
+		// const artistChoosing: boolean = artistIsChoosing && artistPlayer !== currentPlayer;
 
 		return (
 			<>
 				<div style={{ display: 'flex', height: '100vh' }} >
 					<div style={{ flexGrow: 1 }}>
-						<PlayerView
+						{/* <PlayerView
 							roundIsActive={!artistChoosing}
 							ioSocket={this.socket}
 							onGuesserGuess={this.onGuesserGuess}
 							playerRole={currentPlayer.role}
-						/>
+						/> */}
+						<NewArtistView ioSocket={this.socket} />
 					</div>
-					<PlayerDrawer currentPlayer={currentPlayer} players={players} userGuesses={userGuesses} />
+					{/* <PlayerDrawer currentPlayer={currentPlayer} players={players} userGuesses={userGuesses} /> */}
 				</div>
 
-				<AutoSnackbar
+				{/* <AutoSnackbar
 					open={true}
 					message={`Welcome ${currentPlayer.name}!`}
 					iconName="👋"
-				/>
+				/> */}
 				<AutoSnackbar
 					open={playerWonMessage !== ''}
 					message={playerWonMessage}
@@ -89,7 +91,7 @@ export class App extends React.Component<{}, AppState> {
 
 				<EnableFullscreenDialog />
 
-				<Dialog open={artistChoosing}>
+				{/* <Dialog open={artistChoosing}>
 					<DialogTitle>
 						{
 							artistPlayer
@@ -102,7 +104,7 @@ export class App extends React.Component<{}, AppState> {
 							A new subject is being chosen.
 						</DialogContentText>
 					</DialogContent>
-				</Dialog>
+				</Dialog> */}
 			</>
 		);
 	}
