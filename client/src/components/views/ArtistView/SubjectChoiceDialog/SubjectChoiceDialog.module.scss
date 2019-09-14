@@ -1,0 +1,19 @@
+.rowWrapper {
+  margin-top: 14px;
+}
+
+.row {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+
+  user-select: none;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.07);
+  }
+}
+
+.selectedRow {
+  border-color: lightblue;
+  outline: 1px solid lightblue;
+}

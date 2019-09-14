@@ -144,6 +144,26 @@ export class GameLobby {
     }
   }
 
+  /**
+   * Checks the player to see if they match a give player role
+   * @param role The role that the player should be checked against
+   * @param player The player to check
+   */
+  public checkPlayerRole(role: PlayerRoles, player: Player): boolean {
+
+    if (role == null || !player || player.role == null) {
+      return false;
+    }
+
+    const playerToCheck: Player | undefined = this.players.find((p: Player): boolean => player.id === p.id);
+
+    if (!playerToCheck) {
+      return false;
+    }
+
+    return playerToCheck.role === role;
+  }
+
   public getSubjectPlaceholder(): SubjectPlacerholder {
     return ({
       topic: this.currentSubject.topic,
@@ -203,7 +223,7 @@ export class GameLobby {
       // Return if...
       if (
         !guess
-        || player.id === artistPlayer.id // Player is Artist
+        || this.checkPlayerRole(PlayerRoles.Artist, player) // Player is Artist
         || !currentSubject // No Subject exists
         || !this.roundIsActive // Round is not active
       ) {

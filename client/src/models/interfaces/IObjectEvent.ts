@@ -1,4 +1,4 @@
-import { ObjectEventTypes } from "./ObjectEventTypes";
+import { ObjectEventTypes } from "../enums/ObjectEventTypes";
 
 export interface IObjectEvent {
 	/**

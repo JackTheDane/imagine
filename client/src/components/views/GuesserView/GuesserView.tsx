@@ -1,18 +1,18 @@
 import React, { createRef } from 'react';
 import s from './GuesserView.module.scss';
 import { fabric } from 'fabric';
-import { ICanvasEvent } from '../../../../models/ICanvasEvent';
-import { CanvasEventTypes } from '../../../../models/CanvasEventTypes';
-import { IObjectEvent } from '../../../../models/IObjectEvent';
-import { ObjectEventTypes } from '../../../../models/ObjectEventTypes';
-import { IGameEvent } from '../../../../models/IGameEvent';
-import { IObjectChanges } from '../../../../models/IObjectChanges';
-import { IImageInfo } from '../../../../models/IImageInfo';
-import { ISharedViewProps } from '../../../../models/ISharedViewProps';
-import { getCanvasHeightFromWidth } from '../../../../utilities/getCanvasHeightFromWidth';
-import { refreshInterval } from '../../../../config/refreshInterval';
-import { scaleFactor } from '../../../../config/scaleFactor';
-import { SubjectPlacerholder } from '../../../../models/SubjectPlaceholder';
+import { ICanvasEvent } from '../../../models/interfaces/ICanvasEvent';
+import { CanvasEventTypes } from '../../../models/enums/CanvasEventTypes';
+import { IObjectEvent } from '../../../models/interfaces/IObjectEvent';
+import { ObjectEventTypes } from '../../../models/enums/ObjectEventTypes';
+import { IGameEvent } from '../../../models/interfaces/IGameEvent';
+import { IObjectChanges } from '../../../models/interfaces/IObjectChanges';
+import { IImageInfo } from '../../../models/interfaces/IImageInfo';
+import { ISharedViewProps } from '../../../models/interfaces/ISharedViewProps';
+import { getCanvasHeightFromWidth } from '../../../utils/getCanvasHeightFromWidth';
+import { refreshInterval } from '../../../config/refreshInterval';
+import { scaleFactor } from '../../../config/scaleFactor';
+import { SubjectPlacerholder } from '../../../models/interfaces/SubjectPlaceholder';
 
 export interface GuesserViewProps extends ISharedViewProps {
 	onGuess: (guess: string) => void;
@@ -316,6 +316,7 @@ export class GuesserView extends React.Component<GuesserViewProps, GuesserViewSt
 		this.c = new fabric.StaticCanvas(this.canvasRef.current);
 
 		fabric.Object.prototype.lockUniScaling = true;
+		fabric.Object.prototype.lockScalingFlip = true;
 		fabric.Object.prototype.centeredRotation = true;
 		fabric.Object.prototype.centeredScaling = true;
 		fabric.Object.prototype.originX = 'center';

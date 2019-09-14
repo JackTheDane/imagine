@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Drawer, TextField, Grid } from '@material-ui/core';
 import s from './FigureDrawer.module.scss';
 import { figures as startFigures } from '../../../../config/figures';
-import { IFigure } from '../../../../models/IFigure';
+import { IFigure } from '../../../../models/interfaces/IFigure';
 import { Figure } from './Figure/Figure';
 
 export interface FigureDrawerProps {
@@ -10,7 +10,7 @@ export interface FigureDrawerProps {
   onAddImage: (src: string) => void;
 }
 
-export function FigureDrawer({ }: FigureDrawerProps): JSX.Element {
+export function FigureDrawer({ mobileOpen, onAddImage }: FigureDrawerProps): JSX.Element {
 
   const [filter, setFilter] = React.useState<string>('');
   const [figures, setFigures] = React.useState<IFigure[]>([...startFigures]);

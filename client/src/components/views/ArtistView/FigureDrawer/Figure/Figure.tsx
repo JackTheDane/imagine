@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { makeStyles } from '@material-ui/styles';
 import { Paper } from '@material-ui/core';
 import { imgFolder } from '../../../../../config/imgFolder';
 import s from './Figure.module.scss';
@@ -26,7 +25,7 @@ export function Figure({ src, selected }: FigureProps): JSX.Element {
 
   return (
     <Paper className={containerClass}>
-      <img className={s.img} src={`${imgFolder}/${src}`} />
+      <img className={s.img} alt="" src={`${imgFolder}/${src}`} />
     </Paper>
   );
 }

@@ -3,7 +3,7 @@ import { PlayerRoles } from '../enums/PlayerRoles';
 import { v4 as uuidv4 } from 'uuid';
 import * as socketio from 'socket.io';
 import { ClientPlayer } from '../interfaces/ClientPlayer';
-import { getRandomSubjects } from '../../actions/getRandomSubjects';
+import { getRandomSubjects } from '../../utils/getRandomSubjects';
 import { Subject } from '../interfaces/Subject';
 
 export class Player {
@@ -67,10 +67,8 @@ export class Player {
   private addEventListeners() {
     // Artist Ready
     this.socket.on('ready', () => {
-      const artistPlayer: Player = this.gameLobby.getOrSetArtistPlayer();
-
       // Check that the player is the Artist of the game
-      if (artistPlayer.id === this.id) {
+      if (this.gameLobby.checkPlayerRole(PlayerRoles.Artist, this)) {
         // Send Subject choices
         this.socket.emit('newSubjectChoices', getRandomSubjects(3, this.gameLobby.getPreviousSubjects()));
       } else { // If player is a Guesser, send currentSubject
@@ -87,9 +85,7 @@ export class Player {
         return;
       }
 
-      const artistPlayer: Player = this.gameLobby.getOrSetArtistPlayer();
-
-      if (!subject || artistPlayer.id !== this.id) {
+      if (!subject || !this.gameLobby.checkPlayerRole(PlayerRoles.Artist, this)) {
         return;
       }
 

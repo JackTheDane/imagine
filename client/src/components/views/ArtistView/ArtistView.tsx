@@ -1,25 +1,25 @@
 import React, { createRef } from 'react';
 import s from './ArtistView.module.scss';
 import { fabric } from 'fabric';
-import { ISavedFabricObject } from '../../../models/ISavedFabricObject';
-import { ICanvasEvent } from '../../../models/ICanvasEvent';
-import { CanvasEventTypes } from '../../../models/CanvasEventTypes';
-import { IObjectEvent } from '../../../models/IObjectEvent';
-import { ObjectEventTypes } from '../../../models/ObjectEventTypes';
-import { IGameEvent } from '../../../models/IGameEvent';
-import { IObjectChanges } from '../../../models/IObjectChanges';
-import { ISharedViewProps } from '../../../models/ISharedViewProps';
+import { ISavedFabricObject } from '../../../models/interfaces/ISavedFabricObject';
+import { ICanvasEvent } from '../../../models/interfaces/ICanvasEvent';
+import { CanvasEventTypes } from '../../../models/enums/CanvasEventTypes';
+import { IObjectEvent } from '../../../models/interfaces/IObjectEvent';
+import { ObjectEventTypes } from '../../../models/enums/ObjectEventTypes';
+import { IGameEvent } from '../../../models/interfaces/IGameEvent';
+import { IObjectChanges } from '../../../models/interfaces/IObjectChanges';
+import { ISharedViewProps } from '../../../models/interfaces/ISharedViewProps';
 
-import { getThirdPointInTriangle } from '../../../utilities/getThirdPointInTriangle';
-import { getValueElse } from '../../../utilities/getValueElse';
-import { IImageInfo } from '../../../models/IImageInfo';
-import { getCanvasHeightFromWidth } from '../../../utilities/getCanvasHeightFromWidth';
+import { getThirdPointInTriangle } from '../../../utils/getThirdPointInTriangle';
+import { getValueElse } from '../../../utils/getValueElse';
+import { IImageInfo } from '../../../models/interfaces/IImageInfo';
+import { getCanvasHeightFromWidth } from '../../../utils/getCanvasHeightFromWidth';
 import { refreshInterval } from '../../../config/refreshInterval';
 import { scaleFactor } from '../../../config/scaleFactor';
-import { Subject } from '../../../models/Subject';
+import { Subject } from '../../../models/interfaces/Subject';
 import { ArtistToolbar } from './Toolbar/ArtistToolbar';
-import { Drawer, Fab, Icon } from '@material-ui/core';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
+import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
@@ -32,6 +32,8 @@ export interface ArtistViewState {
 	snapshotHistory: IObjectSnapshot[];
 	historyIndex: number;
 	itemsSelected: boolean;
+	availableSubjectChoices: Subject[];
+	openSubjectDialog: boolean;
 }
 
 export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState> {
@@ -55,7 +57,9 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		this.state = {
 			snapshotHistory: [{}],
 			historyIndex: 0,
-			itemsSelected: false
+			itemsSelected: false,
+			openSubjectDialog: false,
+			availableSubjectChoices: []
 		};
 	}
 
@@ -68,7 +72,9 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		const {
 			snapshotHistory,
 			historyIndex,
-			itemsSelected
+			itemsSelected,
+			availableSubjectChoices,
+			openSubjectDialog
 		} = this.state;
 
 		const canvasProps: React.DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> = {
@@ -103,6 +109,14 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 									add_to_photos
 								</Icon>
 							</Fab> */}
+
+							{
+								openSubjectDialog && availableSubjectChoices && availableSubjectChoices.length && (
+									<SubjectChoiceDialog onSelectedSubject={this.onSubjectSelected} availableSubjects={availableSubjectChoices} />
+								)
+							}
+
+
 							<ArtistToolbar
 								buttonProps={[
 									{
@@ -146,8 +160,10 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 				return;
 			}
 
-			// TODO: Add support for choosing a subject
-			ioSocket.emit('newSubjectChosen', newSubjects[0]);
+			this.setState({
+				availableSubjectChoices: newSubjects,
+				openSubjectDialog: true
+			});
 		});
 
 		this.init();
@@ -167,6 +183,20 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		if (ioSocket) {
 			ioSocket.off('newSubjectChoices');
 		}
+	}
+
+	private onSubjectSelected = (newSubject: Subject) => {
+
+		if (!newSubject) {
+			return;
+		}
+
+		this.setState({
+			openSubjectDialog: false,
+			availableSubjectChoices: []
+		});
+
+		this.props.ioSocket.emit('newSubjectChosen', newSubject);
 	}
 
 	// ---- Canvas Utilities and Setup ---- //
@@ -890,8 +920,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			return;
 		}
 
-		console.log('Send event');
-
-		this.props.ioSocket.emit('cEvent', JSON.stringify(event));
+		this.props.ioSocket.emit("cEvent", JSON.stringify(event));
 	}
 }
