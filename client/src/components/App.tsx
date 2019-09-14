@@ -12,7 +12,7 @@ import { webSocketPort } from '../config/webSocketPort';
 import { MessageTypes } from '../models/enums/MessageTypes';
 // import { Dialog, DialogTitle, DialogContent, DialogContentText } from '@material-ui/core';
 import { EnableFullscreenDialog } from './EnableFullscreenDialog/EnableFullscreenDialog';
-import { NewArtistView } from './PlayerView/ArtistView/NewArtistView';
+import { ArtistView } from './PlayerView/ArtistView/ArtistView';
 
 export interface AppState {
 	currentPlayer: Player | undefined;
@@ -72,7 +72,9 @@ export class App extends React.Component<{}, AppState> {
 							onGuesserGuess={this.onGuesserGuess}
 							playerRole={currentPlayer.role}
 						/> */}
-						<NewArtistView ioSocket={this.socket} />
+
+						<ArtistView ioSocket={this.socket} />
+
 					</div>
 					{/* <PlayerDrawer currentPlayer={currentPlayer} players={players} userGuesses={userGuesses} /> */}
 				</div>
@@ -82,12 +84,12 @@ export class App extends React.Component<{}, AppState> {
 					message={`Welcome ${currentPlayer.name}!`}
 					iconName="👋"
 				/> */}
-				<AutoSnackbar
+				{/* <AutoSnackbar
 					open={playerWonMessage !== ''}
 					message={playerWonMessage}
 					variant="success"
 					iconName="🎉"
-				/>
+				/> */}
 
 				<EnableFullscreenDialog />
 

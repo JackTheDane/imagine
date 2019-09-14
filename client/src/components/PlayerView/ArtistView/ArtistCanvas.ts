@@ -9,6 +9,8 @@ import { IObjectChanges } from '../../../models/interfaces/IObjectChanges';
 import { refreshInterval } from '../../../config/refreshInterval';
 import { getCanvasHeightFromWidth } from '../../../utils/getCanvasHeightFromWidth';
 import { ObjectEventTypes } from '../../../models/enums/ObjectEventTypes';
+import { scaleFactor } from '../../../config/scaleFactor';
+import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 
 export class ArtistCanvas {
 
@@ -28,6 +30,10 @@ export class ArtistCanvas {
      * Canvas HTML element that should be used
      */
     canvasElement: HTMLCanvasElement,
+    /**
+     * The width of the canvas
+     */
+    private canvasWidth: number,
     /**
      * Callback for when a new selection is made
      */
@@ -68,6 +74,38 @@ export class ArtistCanvas {
     // this.startRefresh();
   }
 
+  public dispose = (): fabric.Canvas => this.canvas.dispose();
+
+  /**
+   * Set a new width for the canvas to follow
+   */
+  public setCanvasWidth = (newWidth: number) => {
+
+    const prevWidth: number = this.canvasWidth;
+
+    this.canvasWidth = newWidth;
+    this._resizeCanvas();
+
+    // If the canvas had a previous width, rescale all objects
+    if (prevWidth) {
+      // If so, get the new scale
+      const newScale: number = this.canvasWidth / prevWidth;
+
+      // Rescale all fabric objects to the new scale
+      rescaleAllFabricObjects(this.canvas, newScale);
+    }
+  }
+
+  /**
+   * Resizes the canvas to fit the canvasWidth
+   */
+  private _resizeCanvas = () => {
+    this.canvas.setWidth(this.canvasWidth);
+    this.canvas.setHeight(getCanvasHeightFromWidth(this.canvasWidth));
+    this.canvas.renderAll();
+  }
+
+
   // Add new Fig
 
   // Set canvas state, based on History Entry matching index
@@ -78,6 +116,10 @@ export class ArtistCanvas {
 
   // Rescale all Figs
 
+  private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.canvasWidth || 1);
+  private getValueToWidthScale = (value: number): number => value / (this.canvasWidth || 1);
+  private getScaledScale = (scaleValue: number): number => Math.round(this.getValueToWidthScale(scaleValue) * scaleFactor);
+
 
   private _addEventListeners = () => {
     // Add and remove
@@ -85,7 +127,6 @@ export class ArtistCanvas {
 
       if (!e || !e.target || !e.target.name) return;
 
-      // const imageInfo: IImageInfo | undefined = this.getScaledImageInfo(e.target as fabric.Image);
       const imageInfo: IImageInfo | undefined = this.getScaledImageInfo(e.target as fabric.Image);
 
 

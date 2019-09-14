@@ -15,7 +15,6 @@ import { getValueElse } from '../../../utils/getValueElse';
 import { IImageInfo } from '../../../models/interfaces/IImageInfo';
 import { getCanvasHeightFromWidth } from '../../../utils/getCanvasHeightFromWidth';
 import { refreshInterval } from '../../../config/refreshInterval';
-import { scaleFactor } from '../../../config/scaleFactor';
 import { Subject } from '../../../models/interfaces/Subject';
 import { ArtistToolbar } from './Toolbar/ArtistToolbar';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
@@ -201,22 +200,8 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 		if (!this.state.canvasWidth || !this.c) return;
 
-		if (!prevState.canvasWidth) {
-			this.setInitialCanvasSize();
-			return;
-		}
-
 		// Check if the canvasWidth has changed
-		if (
-			prevState.canvasWidth !== this.state.canvasWidth
-		) {
-
-			// If so, get the new scale
-			const newScale: number = this.state.canvasWidth / prevState.canvasWidth;
-
-			// Rescale all fabric objects to the new scale
-			rescaleAllFabricObjects(this.c, newScale);
-		}
+		if (prevState.canvasWidth !== this.state.canvasWidth) this.c.setCanvasWidth(this.state.canvasWidth);
 	}
 
 	public componentWillUnmount(): void {
@@ -265,15 +250,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		this.setState({
 			openMobileFigureDrawer: newValue
 		});
-	}
-
-	private setInitialCanvasSize = () => {
-
-		if (!this.c || !this.state.canvasWidth) return;
-
-		this.c.setWidth(this.state.canvasWidth);
-		this.c.setHeight(getCanvasHeightFromWidth(this.state.canvasWidth));
-		this.c.renderAll();
 	}
 
 	private onSubjectSelected = (newSubject: Subject) => {
@@ -564,10 +540,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 	}
 
 	// -- Canvas Utility -- //
-
-	private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.state.canvasWidth || 1);
-	private getValueToWidthScale = (value: number): number => value / (this.state.canvasWidth || 1);
-	private getScaledScale = (scaleValue: number): number => Math.round(this.getValueToWidthScale(scaleValue) * scaleFactor);
 
 	private addToSnapshotToHistory = (snapshot: IObjectSnapshot = this.objectsSnapshot) => {
 
