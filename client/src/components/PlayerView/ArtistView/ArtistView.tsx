@@ -2,26 +2,14 @@ import React, { createRef } from 'react';
 import s from './ArtistView.module.scss';
 import { fabric } from 'fabric';
 import { ISavedFabricObject } from '../../../models/interfaces/ISavedFabricObject';
-import { ICanvasEvent } from '../../../models/interfaces/ICanvasEvent';
-import { CanvasEventTypes } from '../../../models/enums/CanvasEventTypes';
-import { IObjectEvent } from '../../../models/interfaces/IObjectEvent';
-import { ObjectEventTypes } from '../../../models/enums/ObjectEventTypes';
-import { IGameEvent } from '../../../models/interfaces/IGameEvent';
-import { IObjectChanges } from '../../../models/interfaces/IObjectChanges';
 import { ISharedViewProps } from '../../../models/interfaces/ISharedViewProps';
-
-import { getThirdPointInTriangle } from '../../../utils/getThirdPointInTriangle';
-import { getValueElse } from '../../../utils/getValueElse';
-import { IImageInfo } from '../../../models/interfaces/IImageInfo';
 import { getCanvasHeightFromWidth } from '../../../utils/getCanvasHeightFromWidth';
-import { refreshInterval } from '../../../config/refreshInterval';
 import { Subject } from '../../../models/interfaces/Subject';
 import { ArtistToolbar } from './Toolbar/ArtistToolbar';
 import { FigureDrawer } from './FigureDrawer/FigureDrawer';
 import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
 import { Hidden, Fab, Icon } from '@material-ui/core';
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
-import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 import { ArtistCanvas } from './ArtistCanvas';
 
 export interface IObjectSnapshot {
@@ -48,14 +36,13 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 	private canvasWrapperRef = createRef<HTMLDivElement>();
 	private _isMounted: boolean;
 
-	private c: ArtistCanvas | undefined;
+	/**
+	 * The ArtistCanvas instance for the ArtistView
+	 */
+	private c!: ArtistCanvas; // "!" helps indicate that the value should be set immediatly. Remove if issues occur
 
-	private storedCanvasEvents: ICanvasEvent[] = [];
-	private storedObjectEvents: IObjectChanges = {};
+	// private objectsSnapshot: IObjectSnapshot = {};
 
-	private objectsSnapshot: IObjectSnapshot = {};
-
-	private objectIndex: number = 0;
 
 	constructor(props: ArtistViewProps) {
 		super(props);
@@ -103,7 +90,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 					}}
 				>
 					<div>
-						<FigureDrawer onMobileClose={() => this.onMobileFigureChange(false)} onMobileOpen={() => this.onMobileFigureChange(true)} mobileOpen={openMobileFigureDrawer} onAddImage={(src: string) => { this.addNewImageToCanvas(src); if (openMobileFigureDrawer) { this.setState({ openMobileFigureDrawer: false }) } }} />
+						<FigureDrawer onMobileClose={() => this.onMobileFigureChange(false)} onMobileOpen={() => this.onMobileFigureChange(true)} mobileOpen={openMobileFigureDrawer} onAddImage={(src: string) => { this.c.addNewImageToCanvas(src); if (openMobileFigureDrawer) { this.setState({ openMobileFigureDrawer: false }) } }} />
 					</div>
 
 					<div
@@ -192,7 +179,14 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		window.addEventListener('resize', this.setScaledCanvasWidth);
 		window.addEventListener('keydown', this.onKeyPress);
 
-		this.c = new ArtistCanvas(ioSocket, this.artistRef.current);
+		this.c = new ArtistCanvas(
+			ioSocket,
+			this.artistRef.current,
+			this.state.canvasWidth,
+			this.setItemsSelected,
+			this.addHistoryEvent
+		);
+
 		document.title = 'Imagine - Your turn';
 	}
 
@@ -224,6 +218,16 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 	}
 
 	// ---- Callbacks ---- //
+
+	private deleteActiveObjects = () => {
+
+		const snapshot: IObjectSnapshot | false = this.c.deleteActiveObjects();
+
+		if (snapshot) {
+			// Add the snapshot to the snapshot history
+			this.addToSnapshotToHistory(snapshot);
+		}
+	}
 
 	private setScaledCanvasWidth = () => {
 		if (!this.canvasWrapperRef || !this.canvasWrapperRef.current) return;
@@ -300,198 +304,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		}
 	}
 
-	// ---- Canvas Utilities and Setup ---- //
-
-	/**
-	 * Starts the refresh that updates and transmits changes to game state
-	 */
-	private startRefresh = () => {
-
-		// Start the interval to refresh the state snapshots
-		setInterval(() => {
-			try {
-				if (!this.c) {
-					return;
-				}
-
-				const allObjects: fabric.Object[] = this.c.getObjects('image');
-				const objectSnapshot: IObjectSnapshot = this.generateSnapshotsFromObjects(allObjects);
-				const event: IGameEvent = {}; // The event that will be populated and sent to the server
-
-				// Check for CanvasEvents
-				const canvasEvents: ICanvasEvent[] | undefined | false = this.storedCanvasEvents.length > 0 && this.storedCanvasEvents;
-
-				if (canvasEvents) {
-					event.cEvents = canvasEvents;
-				}
-
-				// Check for objectEvents
-				const objectEvents: IObjectChanges | false = objectSnapshot && this.getObjectChangesFromSnapshot(objectSnapshot);
-
-				if (objectEvents) {
-					event.oEvents = objectEvents;
-				}
-
-				// If any new events occurred, return the events.
-				if ((event.cEvents || event.oEvents)) {
-					this.sendCanvasChange(event);
-				}
-
-				// Set new snapshot and reset changes
-				this.objectsSnapshot = objectSnapshot;
-				this.storedCanvasEvents = [];
-			} catch (error) {
-				console.log(error);
-			}
-		}, refreshInterval);
-	}
-
-	/**
-	 * Add the Canvas event listeners
-	 */
-
-	private addCanvasEventListeners = (): void => {
-		if (!this.c) {
-			return;
-		}
-
-		// Add and remove
-		this.c.on('object:added', (e: fabric.IEvent): void => {
-
-			if (!e || !e.target || !e.target.name) {
-				return;
-			}
-
-			const image: fabric.Image = e.target as fabric.Image;
-			const imageInfo: IImageInfo | undefined = this.getScaledImageInfo(image);
-
-			if (!imageInfo) {
-				return;
-			}
-
-			const {
-				scale,
-				...rest
-			} = imageInfo;
-
-			this.storedCanvasEvents.push({
-				type: CanvasEventTypes.add,
-				data: {
-					...rest,
-					scale: this.getScaledScale(scale)
-				}
-			});
-		});
-
-		this.c.on('object:removed', (e: fabric.IEvent): void => {
-			if (!e || !e.target || !e.target.name) {
-				return;
-			}
-
-			// Push new canvas event
-			this.storedCanvasEvents.push({
-				type: CanvasEventTypes.remove,
-				data: e.target.name
-			});
-		});
-
-		// Selection
-		this.c.on('selection:created', this.onSelectionCreateAndUpdate);
-		this.c.on('selection:updated', this.onSelectionCreateAndUpdate);
-		this.c.on('selection:cleared', () => {
-			this.setState({
-				itemsSelected: false
-			});
-		});
-
-		// Object modification
-		this.c.on('object:modified', e => {
-			this.addToSnapshotToHistory();
-		});
-	};
-
-
-	// -- Canvas - Event Callbacks -- //
-
-	private deleteActiveObjects = () => {
-
-		if (!this.c) {
-			return;
-		}
-
-		const activeObjects: fabric.Object[] = this.c.getActiveObjects();
-
-
-		if (activeObjects && activeObjects.length > 0) {
-			this.c.remove(...activeObjects);
-			this.c.discardActiveObject();
-
-			// Get current snapshot and remove the object from it. Then, set it to the snapshot history
-			const snapshot: IObjectSnapshot = { ...this.objectsSnapshot };
-
-			activeObjects.forEach(o => {
-				if (!o.name) {
-					return;
-				}
-				// Delete the property from the snapshot
-				delete snapshot[o.name];
-			});
-
-			// Add the snapshot to the snapshot history
-			this.addToSnapshotToHistory(snapshot);
-		}
-	}
-
-	private onSelectionCreateAndUpdate = (e: fabric.IEvent) => {
-		const s: fabric.IEvent & { selected: fabric.Object[] } = e as any;
-
-		// If no selection event or no canvas, return
-		if (!s || !s.selected || !this.c) {
-			return;
-		}
-
-		this.setState({
-			itemsSelected: true
-		});
-
-		// Get all the objects and their length
-		const objects: fabric.Object[] = this.c.getObjects('image')
-		const numberOfObjects: number = objects.length;
-
-
-		// If there are no objects or all objects are selected
-		if (numberOfObjects === 0 || numberOfObjects === s.selected.length) {
-			return;
-		}
-
-		// Loop over each object and set its new index
-		s.selected.forEach(
-			(o: fabric.Object, i: number) => {
-
-				if (!o || o.name == null) {
-					return;
-				}
-
-				const currentIndex: number = objects.indexOf(o);
-				const newIndex: number = numberOfObjects - s.selected.length + i;
-
-				if (currentIndex === newIndex) {
-					return;
-				}
-
-				// Move the object to its new index
-				o.moveTo(newIndex);
-
-				this.addToStoredObjectEvents(
-					o.name,
-					{
-						type: ObjectEventTypes.moveTo,
-						data: newIndex
-					}
-				);
-			}
-		);
-	}
 
 	// -- Undo & Redo -- //
 
@@ -505,7 +317,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 	// -- Canvas Utility -- //
 
-	private addToSnapshotToHistory = (snapshot: IObjectSnapshot = this.objectsSnapshot) => {
+	private addToSnapshotToHistory = (snapshot: IObjectSnapshot = this.c.getSnapshot()) => {
 
 		const {
 			historyIndex,
@@ -529,4 +341,49 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		});
 	}
 
+	private getObjectSnapshotByIndex = (index: number): IObjectSnapshot | undefined => {
+		const {
+			historyIndex,
+			snapshotHistory
+		} = this.state;
+
+		// If the index is too low, is the same as the current index or is greater that the current length - 1, return
+		if (
+			index < 0
+			|| index > snapshotHistory.length - 1
+			|| index === historyIndex
+		) {
+			return;
+		}
+
+		// Get the snapshot of the for the given index
+		return snapshotHistory[index];
+	}
+
+	/**
+	 * Sets the Canvas object state based on snapshotHistory index
+	 *
+	 * @param index: number
+	 */
+	private setCanvasObjectStateByHistoryIndex = (index: number): void => {
+
+		const snapshot: IObjectSnapshot | undefined = this.getObjectSnapshotByIndex(index);
+
+		if (!snapshot) {
+			return;
+		}
+
+		this.c.setObjectsFromSnapshot(snapshot);
+		this.setState({
+			historyIndex: index
+		});
+	}
+
+	private setItemsSelected = (isSelected: boolean): void => this.setState({ itemsSelected: isSelected });
+	private addHistoryEvent = (newSnapshot: IObjectSnapshot): void => this.setState(
+		({ snapshotHistory, historyIndex }) => ({
+			snapshotHistory: [...snapshotHistory, newSnapshot],
+			historyIndex: historyIndex + 1
+		})
+	);
 }
