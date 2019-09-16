@@ -17,16 +17,22 @@ import { IObjectEvent } from '../../../models/interfaces/IObjectEvent';
 
 export class ArtistCanvas {
 
-  // Add "!" to tell TS that the canvas will definitely be initialised
-
   /**
    * The FabricJS canvas instance - Should generally not be accessed directly
    */
-  public canvas!: fabric.Canvas;
+  public canvas!: fabric.Canvas; // Add "!" to tell TS that the canvas will definitely be initialised
 
+  /**
+   * The snapshot used to "record" changes made between refresh intervals
+   */
   private objectsSnapshot: IObjectSnapshot = {};
 
+  /**
+   * The index used to identify each object, via the Fabric.js "name" property
+   */
   private objectIndex: number = 0;
+
+
   private storedCanvasEvents: ICanvasEvent[] = [];
   private storedObjectEvents: IObjectChanges = {};
 
