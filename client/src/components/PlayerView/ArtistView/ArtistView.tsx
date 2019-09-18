@@ -250,11 +250,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		});
 	}
 
-	private onMobileFigureChange = (newValue: boolean) => {
-		this.setState({
-			openMobileFigureDrawer: newValue
-		});
-	}
+	private onMobileFigureChange = (newValue: boolean) => this.setState({ openMobileFigureDrawer: newValue });
 
 	private onSubjectSelected = (newSubject: Subject) => {
 
@@ -380,6 +376,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 	}
 
 	private setItemsSelected = (isSelected: boolean): void => this.setState({ itemsSelected: isSelected });
+
 	private addHistoryEvent = (newSnapshot: IObjectSnapshot): void => this.setState(
 		({ snapshotHistory, historyIndex }) => ({
 			snapshotHistory: [...snapshotHistory, newSnapshot],
