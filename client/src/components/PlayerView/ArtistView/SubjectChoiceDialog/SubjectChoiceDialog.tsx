@@ -4,52 +4,62 @@ import { Dialog, DialogTitle, DialogContent, DialogContentText, List, ListItem, 
 import s from './SubjectChoiceDialog.module.scss';
 
 export interface SubjectChoiceDialogProps {
-  availableSubjects: Subject[];
+  socket: SocketIOClient.Socket;
   onSelectedSubject: (newSubject: Subject) => void;
 }
 
 export function SubjectChoiceDialog({
-  availableSubjects,
+  socket,
   onSelectedSubject
 }: SubjectChoiceDialogProps): JSX.Element {
 
+  const [subjects, setSubjects] = React.useState<Subject[]>([]);
+  const [openDialog, setOpenDialog] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    socket.on('newSubjectChoices', (newSubjects: Subject[]) => {
+
+      if (!newSubjects) return;
+
+      setSubjects(newSubjects);
+      setOpenDialog(true);
+    });
+  }, []);
+
   return (
     <Dialog
-      open={true}
-      aria-labelledby="alert-dialog-slide-title"
-      aria-describedby="alert-dialog-slide-description"
+      open={openDialog}
+      aria-labelledby="subject-choice-title"
+      aria-describedby="subject-choice-description"
     >
-      <DialogTitle id="alert-dialog-slide-title">
+      <DialogTitle id="subject-choice-title">
         Choose a subject!
       </DialogTitle>
       <DialogContent>
-        <DialogContentText id="alert-dialog-slide-description">
+        <DialogContentText id="subject-choice-description">
           Its your turn to choose a subject. Pick one from these choices.
         </DialogContentText>
 
         <List>
           {
-            availableSubjects.map((subject: Subject, i: number) => {
-
-              return (
-                <div className={s.rowWrapper} key={`sCh${i}`} onClick={() => { onSelectedSubject(subject); }}>
-                  <ListItem
-                    className={s.row}
-                    alignItems="center"
-                  >
-                    <ListItemAvatar>
-                      <Icon fontSize="large">
-                        {subject.topic.iconName}
-                      </Icon>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={subject.text}
-                      secondary={subject.topic.name}
-                    />
-                  </ListItem>
-                </div>
-              )
-            })
+            subjects.map((subject: Subject, i: number) => (
+              <div className={s.rowWrapper} key={`sCh${i}`} onClick={() => { onSelectedSubject(subject); setOpenDialog(false); }}>
+                <ListItem
+                  className={s.row}
+                  alignItems="center"
+                >
+                  <ListItemAvatar>
+                    <Icon fontSize="large">
+                      {subject.topic.iconName}
+                    </Icon>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={subject.text}
+                    secondary={subject.topic.name}
+                  />
+                </ListItem>
+              </div>
+            ))
           }
         </List>
 

@@ -10,7 +10,7 @@ import { FigureDrawer } from './FigureDrawer/FigureDrawer';
 import { SubjectChoiceDialog } from './SubjectChoiceDialog/SubjectChoiceDialog';
 import { Hidden, Fab, Icon } from '@material-ui/core';
 import { getCanvasWidthFromHeight } from '../../../utils/getCanvasWidthFromHeight';
-import { ArtistCanvas } from './ArtistCanvas';
+import { ArtistCanvas } from '../../../models/classes/ArtistCanvas/ArtistCanvas';
 
 export interface IObjectSnapshot {
 	[objectName: string]: ISavedFabricObject;
@@ -23,9 +23,7 @@ export interface ArtistViewState {
 	snapshotHistory: IObjectSnapshot[];
 	historyIndex: number;
 	itemsSelected: boolean;
-	availableSubjectChoices: Subject[];
 	chosenSubject: Subject | undefined;
-	openSubjectDialog: boolean;
 	openMobileFigureDrawer: boolean;
 	canvasWidth: number;
 	hideSubject: boolean;
@@ -53,8 +51,6 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			snapshotHistory: [{}],
 			historyIndex: 0,
 			itemsSelected: false,
-			openSubjectDialog: false,
-			availableSubjectChoices: [],
 			openMobileFigureDrawer: false,
 			canvasWidth: 0,
 			chosenSubject: undefined,
@@ -65,22 +61,21 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 	public render() {
 
 		const {
+			ioSocket
+		} = this.props;
+
+		const {
 			snapshotHistory,
 			historyIndex,
 			itemsSelected,
-			availableSubjectChoices,
-			openSubjectDialog,
 			openMobileFigureDrawer
 		} = this.state;
 
 		return (
 			<>
 
-				{
-					openSubjectDialog && availableSubjectChoices && availableSubjectChoices.length && (
-						<SubjectChoiceDialog onSelectedSubject={this.onSubjectSelected} availableSubjects={availableSubjectChoices} />
-					)
-				}
+				<SubjectChoiceDialog onSelectedSubject={this.onSubjectSelected} socket={ioSocket} />
+
 				<div
 					style={{
 						display: 'flex',
@@ -160,31 +155,33 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 
 		if (!this.artistRef || !this.artistRef.current) return;
 
+		// Set original scaledCanvasWidth
 		this.setScaledCanvasWidth();
 
-		ioSocket.on('newSubjectChoices', (newSubjects: Subject[]) => {
+		// ioSocket.on('newSubjectChoices', (newSubjects: Subject[]) => {
 
-			if (!this._isMounted || !newSubjects) {
-				return;
-			}
+		// 	if (!this._isMounted || !newSubjects) {
+		// 		return;
+		// 	}
 
-			this.setState({
-				availableSubjectChoices: newSubjects,
-				openSubjectDialog: true
-			});
-		});
+		// 	this.setState({
+		// 		availableSubjectChoices: newSubjects,
+		// 		openSubjectDialog: true
+		// 	});
+		// });
 
 		ioSocket.emit('ready');
 
 		window.addEventListener('resize', this.setScaledCanvasWidth);
 		window.addEventListener('keydown', this.onKeyPress);
 
+		// instantiate a new ArtistCanvas
 		this.c = new ArtistCanvas(
 			ioSocket,
 			this.artistRef.current,
 			this.state.canvasWidth,
 			this.setItemsSelected,
-			this.addHistoryEvent
+			this.addToSnapshotToHistory
 		);
 
 		document.title = 'Imagine - Your turn';
@@ -229,45 +226,8 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		}
 	}
 
-	private setScaledCanvasWidth = () => {
-		if (!this.canvasWrapperRef || !this.canvasWrapperRef.current) return;
+	// -- Key pressing callbacks -- //
 
-		const {
-			clientWidth,
-			clientHeight
-		} = this.canvasWrapperRef.current;
-
-		// Get the scaled wHeight
-		const canvasHeightFromWidth: number = getCanvasHeightFromWidth(clientWidth);
-
-		// Set the state
-		this.setState({
-			canvasWidth: canvasHeightFromWidth > clientHeight
-				// get width from height
-				? getCanvasWidthFromHeight(clientHeight)
-				// Else, use clientWidth
-				: clientWidth
-		});
-	}
-
-	private onMobileFigureChange = (newValue: boolean) => this.setState({ openMobileFigureDrawer: newValue });
-
-	private onSubjectSelected = (newSubject: Subject) => {
-
-		if (!newSubject) {
-			return;
-		}
-
-		this.setState({
-			openSubjectDialog: false,
-			availableSubjectChoices: [],
-			chosenSubject: newSubject
-		});
-
-		this.props.ioSocket.emit('newSubjectChosen', newSubject);
-	}
-
-	// ---- Regular callbacks ---- //
 	private onKeyPress = (e: KeyboardEvent) => {
 		switch (e.key) {
 
@@ -300,6 +260,45 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		}
 	}
 
+	// -- Set state callbacks -- //
+
+	private onMobileFigureChange = (newValue: boolean) => this.setState({ openMobileFigureDrawer: newValue });
+	private setItemsSelected = (isSelected: boolean): void => this.setState({ itemsSelected: isSelected });
+
+	private setScaledCanvasWidth = () => {
+		if (!this.canvasWrapperRef || !this.canvasWrapperRef.current) return;
+
+		const {
+			clientWidth,
+			clientHeight
+		} = this.canvasWrapperRef.current;
+
+		// Get the scaled wHeight
+		const canvasHeightFromWidth: number = getCanvasHeightFromWidth(clientWidth);
+
+		// Set the state
+		this.setState({
+			canvasWidth: canvasHeightFromWidth > clientHeight
+				// get width from height
+				? getCanvasWidthFromHeight(clientHeight)
+				// Else, use clientWidth
+				: clientWidth
+		});
+	}
+
+	private onSubjectSelected = (newSubject: Subject) => {
+
+		if (!newSubject) {
+			return;
+		}
+
+		this.setState({
+			chosenSubject: newSubject
+		});
+
+		this.props.ioSocket.emit('newSubjectChosen', newSubject);
+	}
+
 
 	// -- Undo & Redo -- //
 
@@ -311,7 +310,7 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 		this.setCanvasObjectStateByHistoryIndex(this.state.historyIndex + 1);
 	}
 
-	// -- Canvas Utility -- //
+	// -- Snapshot history management -- //
 
 	private addToSnapshotToHistory = (snapshot: IObjectSnapshot = this.c.getSnapshot()) => {
 
@@ -374,13 +373,4 @@ export class ArtistView extends React.Component<ArtistViewProps, ArtistViewState
 			historyIndex: index
 		});
 	}
-
-	private setItemsSelected = (isSelected: boolean): void => this.setState({ itemsSelected: isSelected });
-
-	private addHistoryEvent = (newSnapshot: IObjectSnapshot): void => this.setState(
-		({ snapshotHistory, historyIndex }) => ({
-			snapshotHistory: [...snapshotHistory, newSnapshot],
-			historyIndex: historyIndex + 1
-		})
-	);
 }

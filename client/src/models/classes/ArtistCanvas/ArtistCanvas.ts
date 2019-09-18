@@ -1,19 +1,21 @@
 import { fabric } from 'fabric';
-import { IImageInfo } from '../../../models/interfaces/IImageInfo';
-import { ISavedFabricObject } from '../../../models/interfaces/ISavedFabricObject';
-import { CanvasEventTypes } from '../../../models/enums/CanvasEventTypes';
-import { IObjectSnapshot } from './ArtistView';
-import { IGameEvent } from '../../../models/interfaces/IGameEvent';
-import { ICanvasEvent } from '../../../models/interfaces/ICanvasEvent';
-import { IObjectChanges } from '../../../models/interfaces/IObjectChanges';
+import { IImageInfo } from '../../interfaces/IImageInfo';
+import { ISavedFabricObject } from '../../interfaces/ISavedFabricObject';
+import { CanvasEventTypes } from '../../enums/CanvasEventTypes';
+import { IObjectSnapshot } from '../../../components/PlayerView/ArtistView/ArtistView';
+import { IGameEvent } from '../../interfaces/IGameEvent';
+import { ICanvasEvent } from '../../interfaces/ICanvasEvent';
+import { IObjectChanges } from '../../interfaces/IObjectChanges';
 import { refreshInterval } from '../../../config/refreshInterval';
 import { getCanvasHeightFromWidth } from '../../../utils/getCanvasHeightFromWidth';
-import { ObjectEventTypes } from '../../../models/enums/ObjectEventTypes';
+import { ObjectEventTypes } from '../../enums/ObjectEventTypes';
 import { scaleFactor } from '../../../config/scaleFactor';
 import { rescaleAllFabricObjects } from '../../../utils/rescaleAllFabricObjects';
 import { getValueElse } from '../../../utils/getValueElse';
 import { getThirdPointInTriangle } from '../../../utils/getThirdPointInTriangle';
-import { IObjectEvent } from '../../../models/interfaces/IObjectEvent';
+import { IObjectEvent } from '../../interfaces/IObjectEvent';
+import { getSavedFabricObjectFromObject } from '../../../utils/getSavedFabricObjectFromObject';
+import { generateSnapshotsFromObjects } from '../../../utils/generateSnapshotsFromObjects';
 
 export class ArtistCanvas {
 
@@ -23,7 +25,7 @@ export class ArtistCanvas {
   public canvas!: fabric.Canvas; // Add "!" to tell TS that the canvas will definitely be initialised
 
   /**
-   * The snapshot used to "record" changes made between refresh intervals
+   * The snapshot of the game's last recorded state. Used to detect changes between refreshes
    */
   private objectsSnapshot: IObjectSnapshot = {};
 
@@ -32,9 +34,17 @@ export class ArtistCanvas {
    */
   private objectIndex: number = 0;
 
-
+  /**
+   * Canvas events stored between refreshes. Canvas events are "large" events such as adding or removing objects from the canvas.
+   */
   private storedCanvasEvents: ICanvasEvent[] = [];
+
+  /**
+   * Object events stored between refreshes. Object events are "smaller" events, such as moving or rotating an object
+   */
   private storedObjectEvents: IObjectChanges = {};
+
+  private _isMounted: boolean = true;
 
   constructor(
     /**
@@ -116,102 +126,6 @@ export class ArtistCanvas {
     }
   }
 
-  /**
-   * Resizes the canvas to fit the canvasWidth
-   */
-  private _resizeCanvas = () => {
-    this.canvas.setWidth(this.canvasWidth);
-    this.canvas.setHeight(getCanvasHeightFromWidth(this.canvasWidth));
-    this.canvas.renderAll();
-  }
-
-
-  // Add new Fig
-
-  // Set canvas state, based on History Entry matching index
-
-  // Undo change
-
-  // Redo change
-
-  // Rescale all Figs
-
-  // ----- Transfered functions --> Consider moving to own "Utilities" folder for better overview
-
-  private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.canvasWidth || 1);
-  private getValueToWidthScale = (value: number): number => value / (this.canvasWidth || 1);
-  private getScaledScale = (scaleValue: number): number => Math.round(this.getValueToWidthScale(scaleValue) * scaleFactor);
-
-  /**
-	 * Returns an ISavedFabricObject from a fabric.Object.
-	 * This includes the coordinates of any group that the object might be part of.
-	 *
-	 * @param fabric.Object
-	 */
-  private getSavedFabricObjectFromObject = (object: fabric.Object): ISavedFabricObject | undefined => {
-    if (!object) {
-      return;
-    }
-
-    const { top, left, scaleX, scaleY, angle, group } = object;
-
-    const r: ISavedFabricObject = {
-      top: getValueElse(top, 0),
-      scale: getValueElse(scaleX || scaleY, 0),
-      left: getValueElse(left, 0),
-      angle: getValueElse(angle, 0),
-      src: (object as fabric.Image).getSrc()
-    };
-
-    if (group) {
-
-      if (group.angle) {
-        r.angle += group.angle;
-
-        if (object.top != null && object.left != null) {
-          const [x, y]: [number, number] = getThirdPointInTriangle(0, 0, object.left, object.top, group.angle);
-
-          r.left = x;
-          r.top = y;
-        }
-      }
-
-      const scalingFactor: number = group.scaleX || group.scaleY || 1;
-
-      if (scalingFactor !== 1) {
-        r.scale *= scalingFactor;
-        r.top *= scalingFactor;
-        r.left *= scalingFactor;
-      }
-
-      if (group.top != null) {
-        r.top += group.top;
-      }
-
-      if (group.left != null) {
-        r.left += group.left;
-      }
-    }
-
-    return {
-      top: Math.round(r.top),
-      angle: Math.round(r.angle),
-      left: Math.round(r.left),
-      scale: r.scale,
-      src: r.src
-    };
-  };
-
-  private addToStoredObjectEvents = (objectName: string, newEvent: IObjectEvent) => {
-    const events: IObjectEvent[] | undefined = this.storedObjectEvents[objectName];
-    this.storedObjectEvents[objectName] = events && events.length > 0
-      ? [
-        ...events,
-        newEvent
-      ]
-      : [newEvent];
-  }
-
   // -- Canvas - Event Callbacks -- //
 
   public deleteActiveObjects = (): IObjectSnapshot | false => {
@@ -234,6 +148,11 @@ export class ArtistCanvas {
       // Delete the property from the snapshot
       delete snapshot[o.name];
     });
+
+    // TODO: Consider if this could be removed, so it doesn't need a seperate callback?
+    // this.objectsSnapshot = snapshot;
+
+    // this.pushNewHistoryEvent(snapshot);
 
     return snapshot;
   }
@@ -332,24 +251,7 @@ export class ArtistCanvas {
     }
   }
 
-  private generateSnapshotsFromObjects = (objects: fabric.Object[]): IObjectSnapshot => {
-
-    const objectSnapshot: IObjectSnapshot = {};
-
-    objects.forEach(o => {
-      // Check for object name and that it is not already set to the snapShot
-      if (o.name && !objectSnapshot[o.name]) {
-        const savedFabricObject: ISavedFabricObject | undefined = this.getSavedFabricObjectFromObject(o);
-
-        // Check if savedFabricObject was returned correctly
-        if (savedFabricObject) {
-          objectSnapshot[o.name] = savedFabricObject; // If so, set to snapshot
-        }
-      }
-    });
-
-    return objectSnapshot;
-  };
+  public getSnapshot = (): IObjectSnapshot => this.objectsSnapshot;
 
   // -- Canvas - Adders -- //
 
@@ -361,7 +263,7 @@ export class ArtistCanvas {
           return;
         }
 
-        const savedFabricObject: ISavedFabricObject | undefined = this.getSavedFabricObjectFromObject(img);
+        const savedFabricObject: ISavedFabricObject | undefined = getSavedFabricObjectFromObject(img);
 
         if (!savedFabricObject) {
           return;
@@ -458,7 +360,6 @@ export class ArtistCanvas {
 
       // Check for changes in angle
       if (newObject.angle !== oldObject.angle) {
-
         changesArray.push({
           type: ObjectEventTypes.angle,
           data: newObject.angle
@@ -493,7 +394,7 @@ export class ArtistCanvas {
 
   private getScaledImageInfo = (image: fabric.Image): IImageInfo | undefined => {
 
-    const savedFabricObject: ISavedFabricObject | undefined = this.getSavedFabricObjectFromObject(image);
+    const savedFabricObject: ISavedFabricObject | undefined = getSavedFabricObjectFromObject(image);
 
     if (!savedFabricObject || image.name == null) {
       return;
@@ -510,55 +411,6 @@ export class ArtistCanvas {
       top: this.getValueToHeightScale(top),
       left: this.getValueToWidthScale(left),
       name: image.name
-    });
-  }
-
-
-  private _addEventListeners = () => {
-    // Add and remove
-    this.canvas.on('object:added', (e: fabric.IEvent): void => {
-
-      if (!e || !e.target || !e.target.name) return;
-
-      const imageInfo: IImageInfo | undefined = this.getScaledImageInfo(e.target as fabric.Image);
-
-
-      if (!imageInfo) return;
-
-      const {
-        scale,
-        ...rest
-      } = imageInfo;
-
-      this.storedCanvasEvents.push({
-        type: CanvasEventTypes.add,
-        data: {
-          ...rest,
-          scale: this.getScaledScale(scale)
-        }
-      });
-    });
-
-    this.canvas.on('object:removed', (e: fabric.IEvent): void => {
-      if (!e || !e.target || !e.target.name) {
-        return;
-      }
-
-      // Push new canvas event
-      this.storedCanvasEvents.push({
-        type: CanvasEventTypes.remove,
-        data: e.target.name
-      });
-    });
-
-    // Selection
-    this.canvas.on('selection:created', this._onSelectionCreateAndUpdate);
-    this.canvas.on('selection:updated', this._onSelectionCreateAndUpdate);
-    this.canvas.on('selection:cleared', () => this.onSelectionChanged(false));
-
-    // Object modification
-    this.canvas.on('object:modified', e => {
-      this.pushNewHistoryEvent(this.objectsSnapshot);
     });
   }
 
@@ -612,7 +464,78 @@ export class ArtistCanvas {
     );
   }
 
-  public getSnapshot = (): IObjectSnapshot => this.objectsSnapshot;
+  /**
+   * Resizes the canvas to fit the canvasWidth
+   */
+  private _resizeCanvas = () => {
+    this.canvas.setWidth(this.canvasWidth);
+    this.canvas.setHeight(getCanvasHeightFromWidth(this.canvasWidth));
+    this.canvas.renderAll();
+  }
+
+  // ----- Transfered functions --> Consider moving to own "Utilities" folder for better overview
+
+  private getValueToHeightScale = (value: number): number => value / getCanvasHeightFromWidth(this.canvasWidth || 1);
+  private getValueToWidthScale = (value: number): number => value / (this.canvasWidth || 1);
+  private getScaledScale = (scaleValue: number): number => Math.round(this.getValueToWidthScale(scaleValue) * scaleFactor);
+
+  private addToStoredObjectEvents = (objectName: string, newEvent: IObjectEvent) => {
+    const events: IObjectEvent[] | undefined = this.storedObjectEvents[objectName];
+    this.storedObjectEvents[objectName] = events && events.length > 0
+      ? [
+        ...events,
+        newEvent
+      ]
+      : [newEvent];
+  }
+
+  private _addEventListeners = () => {
+    // Add and remove
+    this.canvas.on('object:added', (e: fabric.IEvent): void => {
+
+      if (!e || !e.target || !e.target.name) return;
+
+      const imageInfo: IImageInfo | undefined = this.getScaledImageInfo(e.target as fabric.Image);
+
+
+      if (!imageInfo) return;
+
+      const {
+        scale,
+        ...rest
+      } = imageInfo;
+
+      this.storedCanvasEvents.push({
+        type: CanvasEventTypes.add,
+        data: {
+          ...rest,
+          scale: this.getScaledScale(scale)
+        }
+      });
+    });
+
+    this.canvas.on('object:removed', (e: fabric.IEvent): void => {
+      if (!e || !e.target || !e.target.name) {
+        return;
+      }
+
+      // Push new canvas event
+      this.storedCanvasEvents.push({
+        type: CanvasEventTypes.remove,
+        data: e.target.name
+      });
+    });
+
+    // Selection
+    this.canvas.on('selection:created', this._onSelectionCreateAndUpdate);
+    this.canvas.on('selection:updated', this._onSelectionCreateAndUpdate);
+    this.canvas.on('selection:cleared', () => this.onSelectionChanged(false));
+
+    // Object modification
+    this.canvas.on('object:modified', e => {
+      this.pushNewHistoryEvent(this.objectsSnapshot);
+    });
+  }
 
   private _startRefresh = () => {
 
@@ -621,7 +544,7 @@ export class ArtistCanvas {
       try {
 
         const allObjects: fabric.Object[] = this.canvas.getObjects('image');
-        const objectSnapshot: IObjectSnapshot = this.generateSnapshotsFromObjects(allObjects);
+        const objectSnapshot: IObjectSnapshot = generateSnapshotsFromObjects(allObjects);
         const event: IGameEvent = {}; // The event that will be populated and sent to the server
 
         // Check for CanvasEvents
